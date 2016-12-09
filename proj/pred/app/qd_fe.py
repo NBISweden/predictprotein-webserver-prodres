@@ -2,28 +2,6 @@
 # Description: daemon to submit jobs and retrieve results to/from remote
 #              servers
 # 
-# submit job, 
-# get finished jobids 
-# try to retrieve jobs with in finished jobids
-
-# ChangeLog 2015-08-17
-#   The number of jobs submitted to remote servers is calculated based on the
-#   queries in remotequeue_index.txt files instead of using get_suqlist.cgi
-# ChangeLog 2015-08-23 
-#   Fixed the bug for re-creating the torun_idx_file, the code should be before
-#   the return 1
-# ChangeLog 2015-09-07
-#   the torun_idx_file is re-created if remotequeue_idx_file is empty but the
-#   job is not finished
-# ChangeLog 2016-03-04 
-#   fix the bug in re-creation of the torun_idx_file, completed_idx_set is
-#   strings but range(numseq) is list of integer numbers
-# ChangeLog 2016-06-28
-#   move the storage location of results to cache
-#   the results located for each job is a link to cache
-# ChangeLog 2016-07-11
-#   1. do not add deleted jobfolder to finishedjoblogfile
-
 import os
 import sys
 import site
@@ -39,6 +17,7 @@ sys.path.append("%s/env/lib/python2.7/site-packages/"%(webserver_root))
 sys.path.append("/usr/local/lib/python2.7/dist-packages")
 
 import myfunc
+import webserver_common
 import time
 import datetime
 import requests
@@ -60,9 +39,9 @@ vip_user_list = [
         "nanjiang.shu@scilifelab.se"
         ]
 
-DEBUG = False
+DEBUG = True
 DEBUG_NO_SUBMIT = False
-DEBUG_CACHE = False
+DEBUG_CACHE = True
 
 # make sure that only one instance of the script is running
 # this code is working 
@@ -105,19 +84,12 @@ path_stat = "%s/stat"%(path_log)
 path_result = "%s/static/result"%(basedir)
 path_cache = "%s/static/result/cache"%(basedir)
 computenodefile = "%s/static/computenode.txt"%(basedir)
-MAX_SUBMIT_JOB_PER_NODE = 400
+MAX_SUBMIT_JOB_PER_NODE = 200
 MAX_KEEP_DAYS = 30
-blastdir = "%s/%s"%(rundir, "soft/topcons2_webserver/tools/blast-2.2.26")
-os.environ['SCAMPI_DIR'] = "/server/scampi"
-os.environ['MODHMM_BIN'] = "/server/modhmm/bin"
-os.environ['BLASTMAT'] = "%s/data"%(blastdir)
-os.environ['BLASTBIN'] = "%s/bin"%(blastdir)
-os.environ['BLASTDB'] = "%s/%s"%(rundir, "soft/topcons2_webserver/database/blast/")
-script_scampi = "%s/%s"%(rundir, "mySCAMPI_run.pl")
 gen_errfile = "%s/static/log/%s.err"%(basedir, progname)
 gen_logfile = "%s/static/log/%s.log"%(basedir, progname)
 black_iplist_file = "%s/black_iplist.txt"%(basedir)
-SLEEP_INTERVAL = 20 # sleep interval in seconds
+SLEEP_INTERVAL = 5 # sleep interval in seconds
 
 def PrintHelp(fpout=sys.stdout):#{{{
     print >> fpout, usage_short
@@ -398,22 +370,12 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                             else:
                                 runtime = runtime1
 
-                            topfile = "%s/%s/topcons.top"%(
-                                    outpath_this_seq, "Topcons")
-# get origIndex and then read description the description list
-                            try:
-                                description = seqannolist[origIndex]
-                            except:
-                                description = "seq_%d"%(origIndex)
-                            top = myfunc.ReadFile(topfile).strip()
-                            numTM = myfunc.CountTM(top)
-                            posSP = myfunc.GetSPPosition(top)
-                            if len(posSP) > 0:
-                                isHasSP = True
-                            else:
-                                isHasSP = False
-                            info_finish = [ dd, str(len(top)), str(numTM),
-                                    str(isHasSP), "newrun", str(runtime), description]
+                            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
+                                    outpath_this_seq, "final-prediction")
+                            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                            info_finish = [ dd, str(len(top)), 
+                                    str(loc_def), str(loc_def_score),
+                                    "newrun", str(runtime), description]
                             finished_info_list.append("\t".join(info_finish))
                 except:
                     date_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -568,19 +530,12 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                             myfunc.WriteFile(date_str, starttagfile, "w", True)
 
                         runtime = 0.0 #in seconds
-                        topfile = "%s/%s/topcons.top"%(
-                                outpath_this_seq, "Topcons")
-                        top = myfunc.ReadFile(topfile).strip()
-                        numTM = myfunc.CountTM(top)
-                        posSP = myfunc.GetSPPosition(top)
-                        if len(posSP) > 0:
-                            isHasSP = True
-                        else:
-                            isHasSP = False
-                        info_finish = [ "seq_%d"%i,
-                                str(len(seqList[i])), str(numTM),
-                                str(isHasSP), "cached", str(runtime),
-                                seqAnnoList[i]]
+                        finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
+                                outpath_this_seq, "final-prediction")
+                        (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                        info_finish = [ "seq_%d"%i, str(len(seqList[i])), 
+                                str(loc_def), str(loc_def_score),
+                                str(runtime), seqAnnoList[i]]
                         myfunc.WriteFile("\t".join(info_finish)+"\n",
                                 finished_seq_file, "a", isFlush=True)
                         init_finished_idx_list.append(str(i))
@@ -599,40 +554,6 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
         if len(init_finished_idx_list)>0:
             myfunc.WriteFile("\n".join(init_finished_idx_list)+"\n", finished_idx_file, "a", True)
 
-        # run scampi single to estimate the number of TM helices and then run
-        # the query sequences in the descending order of numTM
-        torun_all_seqfile = "%s/%s"%(tmpdir, "query.torun.fa")
-        dumplist = []
-        for key in toRunDict:
-            top = toRunDict[key][0]
-            dumplist.append(">%s\n%s"%(str(key), top))
-        if len(dumplist)>0:
-            myfunc.WriteFile("\n".join(dumplist)+"\n", torun_all_seqfile, "w", True)
-        else:
-            myfunc.WriteFile("", torun_all_seqfile, "w", True)
-        del dumplist
-
-        topfile_scampiseq = "%s/%s"%(tmpdir, "query.torun.fa.topo")
-        if os.path.exists(torun_all_seqfile):
-            # run scampi to estimate the number of TM helices
-            cmd = [script_scampi, torun_all_seqfile, "-outpath", tmpdir]
-            cmdline = " ".join(cmd)
-            try:
-                rmsg = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-            except subprocess.CalledProcessError, e:
-                date_str = time.strftime("%Y-%m-%d %H:%M:%S")
-                myfunc.WriteFile("[Date: %s]"%(date_str)+str(e)+"\n", gen_errfile, "a", True)
-                myfunc.WriteFile("[Date: %s] cmdline = %s\n"%(date_str,
-                    cmdline), gen_errfile, "a", True)
-                pass
-        if os.path.exists(topfile_scampiseq):
-            (idlist_scampi, annolist_scampi, toplist_scampi) = myfunc.ReadFasta(topfile_scampiseq)
-            for jj in xrange(len(idlist_scampi)):
-                numTM = myfunc.CountTM(toplist_scampi[jj])
-                try:
-                    toRunDict[int(idlist_scampi[jj])][1] = numTM
-                except (KeyError, ValueError, TypeError):
-                    pass
 
         sortedlist = sorted(toRunDict.items(), key=lambda x:x[1][1], reverse=True)
 
@@ -1097,17 +1018,12 @@ def GetResult(jobid):#{{{
             else:
                 runtime = runtime1
 
-            topfile = "%s/%s/topcons.top"%(
-                    outpath_this_seq, "Topcons")
-            top = myfunc.ReadFile(topfile).strip()
-            numTM = myfunc.CountTM(top)
-            posSP = myfunc.GetSPPosition(top)
-            if len(posSP) > 0:
-                isHasSP = True
-            else:
-                isHasSP = False
-            info_finish = [ "seq_%d"%origIndex, str(len(seq)), str(numTM),
-                    str(isHasSP), "newrun", str(runtime), description]
+            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
+                    outpath_this_seq, "final-prediction")
+            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+            info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
+                    str(loc_def), str(loc_def_score),
+                    "newrun", str(runtime), description]
             finished_info_list.append("\t".join(info_finish))
             finished_idx_list.append(str(origIndex))#}}}
 
@@ -1183,7 +1099,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
         if os.path.exists(base_www_url_file):
             base_www_url = myfunc.ReadFile(base_www_url_file).strip()
         if base_www_url == "":
-            base_www_url = "http://topcons.net"
+            base_www_url = "http://prodres.bioinfo.se"
 
         date_str = time.strftime("%Y-%m-%d %H:%M:%S")
         date_str_epoch = time.time()
@@ -1201,7 +1117,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
         start_date_epoch = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S").strftime('%s')
         all_runtime_in_sec = float(date_str_epoch) - float(start_date_epoch)
 
-        myfunc.WriteTOPCONSTextResultFile(resultfile_text, outpath_result, maplist,
+        webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
                 all_runtime_in_sec, base_www_url, statfile=statfile)
 
         # now making zip instead (for windows users)
@@ -1228,14 +1144,14 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
             if os.path.exists(errfile):
                 err_msg = myfunc.ReadFile(errfile)
 
-            from_email = "info@topcons.net"
+            from_email = "info@subcons.bioinfo.se"
             to_email = email
-            subject = "Your result for TOPCONS2 JOBID=%s"%(jobid)
+            subject = "Your result for Subcons JOBID=%s"%(jobid)
             if finish_status == "success":
                 bodytext = """
     Your result is ready at %s/pred/result/%s
 
-    Thanks for using TOPCONS2
+    Thanks for using Subcons
 
             """%(base_www_url, jobid)
             elif finish_status == "failed":
@@ -1251,7 +1167,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
                 bodytext="""
     Your result is ready at %s/pred/result/%s
 
-    We are sorry that TOPCONS failed to predict some sequences of your job.
+    We are sorry that Subcons failed to predict some sequences of your job.
 
     Please re-submit the queries that have been failed.
 
@@ -1326,8 +1242,8 @@ def RunStatistics(path_result, path_log):#{{{
             strs = line.split("\t")
             if len(strs)>=7:
                 str_seqlen = strs[1]
-                str_numTM = strs[2]
-                str_isHasSP = strs[3]
+                str_loc_def = strs[2]
+                str_loc_def_score = strs[3]
                 source = strs[4]
                 if source == "newrun":
                     subfolder = strs[0]
@@ -1340,7 +1256,7 @@ def RunStatistics(path_result, path_log):#{{{
                             database_mode = ss2[2]
                             runtimeloginfolist.append("\t".join([jobid, subfolder,
                                 source, runtime_str, database_mode, str_seqlen,
-                                str_numTM, str_isHasSP]))
+                                str_loc_def, str_loc_def_score]))
                         except:
                             sys.stderr.write("bad timefile %s\n"%(timefile))
 
@@ -1657,76 +1573,81 @@ def RunStatistics(path_result, path_log):#{{{
     li_length_runtime_pfam_avg = []
     li_length_runtime_cdd_avg = []
     li_length_runtime_uniref_avg = []
-    hdl = myfunc.ReadLineByBlock(runtimelogfile)
-    if not hdl.failure:
-        lines = hdl.readlines()
-        while lines != None:
-            for line in lines:
-                strs = line.split("\t")
-                if len(strs) < 8:
-                    continue
-                jobid = strs[0]
-                seqidx = strs[1]
-                runtime = -1.0
-                try:
-                    runtime = float(strs[3])
-                except:
-                    pass
-                mtd_profile = strs[4]
-                lengthseq = -1
-                try:
-                    lengthseq = int(strs[5])
-                except:
-                    pass
 
-                numTM = -1
-                try:
-                    numTM = int(strs[6])
-                except:
-                    pass
-                isHasSP = strs[7]
-
-                cntseq += 1
-                if isHasSP == "True":
-                    cnt_hasSP += 1
-
-                if runtime > longestruntime:
-                    line_longestruntime = line
-                    longestruntime = runtime
-                if lengthseq > longestlength:
-                    line_longestseq = line
-                    longestlength = lengthseq
-                if numTM > mostTM:
-                    mostTM = numTM
-                    line_mostTM = line
-
-                if lengthseq != -1:
-                    li_length_runtime.append([lengthseq, runtime])
-                    if lengthseq not in dict_length_runtime:
-                        dict_length_runtime[lengthseq] = []
-                    dict_length_runtime[lengthseq].append(runtime)
-                    if mtd_profile == "pfam":
-                        li_length_runtime_pfam.append([lengthseq, runtime])
-                        if lengthseq not in dict_length_runtime_pfam:
-                            dict_length_runtime_pfam[lengthseq] = []
-                        dict_length_runtime_pfam[lengthseq].append(runtime)
-                    elif mtd_profile == "cdd":
-                        li_length_runtime_cdd.append([lengthseq, runtime])
-                        if lengthseq not in dict_length_runtime_cdd:
-                            dict_length_runtime_cdd[lengthseq] = []
-                        dict_length_runtime_cdd[lengthseq].append(runtime)
-                    elif mtd_profile == "uniref":
-                        li_length_runtime_uniref.append([lengthseq, runtime])
-                        if lengthseq not in dict_length_runtime_uniref:
-                            dict_length_runtime_uniref[lengthseq] = []
-                        dict_length_runtime_uniref[lengthseq].append(runtime)
+    if os.path.exists(runtimelogfile):
+        hdl = myfunc.ReadLineByBlock(runtimelogfile)
+        if not hdl.failure:
             lines = hdl.readlines()
-        hdl.close()
+            while lines != None:
+                for line in lines:
+                    strs = line.split("\t")
+                    if len(strs) < 8:
+                        continue
+                    jobid = strs[0]
+                    seqidx = strs[1]
+                    runtime = -1.0
+                    try:
+                        runtime = float(strs[3])
+                    except:
+                        pass
+                    mtd_profile = strs[4]
+                    lengthseq = -1
+                    try:
+                        lengthseq = int(strs[5])
+                    except:
+                        pass
 
-    li_content = []
-    for line in [line_mostTM, line_longestseq, line_longestruntime]:
-        li_content.append(line)
-    myfunc.WriteFile("\n".join(li_content)+"\n", extreme_runtimelogfile, "w", True)
+                    numTM = -1
+                    try:
+                        numTM = int(strs[6])
+                    except:
+                        pass
+                    isHasSP = strs[7]
+
+                    cntseq += 1
+                    if isHasSP == "True":
+                        cnt_hasSP += 1
+
+                    if runtime > longestruntime:
+                        line_longestruntime = line
+                        longestruntime = runtime
+                    if lengthseq > longestlength:
+                        line_longestseq = line
+                        longestlength = lengthseq
+                    if numTM > mostTM:
+                        mostTM = numTM
+                        line_mostTM = line
+
+                    if lengthseq != -1:
+                        li_length_runtime.append([lengthseq, runtime])
+                        if lengthseq not in dict_length_runtime:
+                            dict_length_runtime[lengthseq] = []
+                        dict_length_runtime[lengthseq].append(runtime)
+                        if mtd_profile == "pfam":
+                            li_length_runtime_pfam.append([lengthseq, runtime])
+                            if lengthseq not in dict_length_runtime_pfam:
+                                dict_length_runtime_pfam[lengthseq] = []
+                            dict_length_runtime_pfam[lengthseq].append(runtime)
+                        elif mtd_profile == "cdd":
+                            li_length_runtime_cdd.append([lengthseq, runtime])
+                            if lengthseq not in dict_length_runtime_cdd:
+                                dict_length_runtime_cdd[lengthseq] = []
+                            dict_length_runtime_cdd[lengthseq].append(runtime)
+                        elif mtd_profile == "uniref":
+                            li_length_runtime_uniref.append([lengthseq, runtime])
+                            if lengthseq not in dict_length_runtime_uniref:
+                                dict_length_runtime_uniref[lengthseq] = []
+                            dict_length_runtime_uniref[lengthseq].append(runtime)
+                lines = hdl.readlines()
+            hdl.close()
+
+        li_content = []
+        try:
+            for line in [line_mostTM, line_longestseq, line_longestruntime]:
+                li_content.append(line)
+            myfunc.WriteFile("\n".join(li_content)+"\n", extreme_runtimelogfile, "w", True)
+        except:
+            pass
 
     # get lengthseq -vs- average_runtime
     dict_list = [dict_length_runtime, dict_length_runtime_pfam, dict_length_runtime_cdd, dict_length_runtime_uniref]
@@ -1853,6 +1774,7 @@ def RunStatistics(path_result, path_log):#{{{
                     numseq = int(strs[3])
                 except:
                     pass
+                method_submission = strs[7]
                 isValidSubmitDate = True
                 try:
                     submit_date = datetime.datetime.strptime(submit_date_str, "%Y-%m-%d %H:%M:%S")
@@ -2009,6 +1931,9 @@ def main(g_params):#{{{
         for node in avail_computenode_list:
             remotequeueDict[node] = []
         for jobid in runjobidlist:
+            lock_file = "%s/%s/%s"%(path_result, jobid, "runjob.lock")
+            if os.path.exists(lock_file):
+                continue
             rstdir = "%s/%s"%(path_result, jobid)
             remotequeue_idx_file = "%s/remotequeue_seqindex.txt"%(rstdir)
             if os.path.exists(remotequeue_idx_file):
@@ -2067,6 +1992,10 @@ def main(g_params):#{{{
                         rstdir = "%s/%s"%(path_result, jobid)
                         finishtagfile = "%s/%s"%(rstdir, "runjob.finish")
                         status = strs[1]
+
+                        lock_file = "%s/%s/%s.lock"%(path_result, jobid, "runjob.lock")
+                        if os.path.exists(lock_file):
+                            continue
 
                         if IsHaveAvailNode(cntSubmitJobDict):
                             if not DEBUG_NO_SUBMIT:

@@ -1,5 +1,13 @@
 #!/usr/bin/env python
 # Description: submit job to queue
+# ChangeLog 2015-03-26 
+#   1. suq ntask is set universally for each node by the qd_topcons2_fe.py
+#   2. priority is re-calculated, considering waiting time and numseq_this_user
+#   in the queue, note that numseq_this_user should be privoded outside of this
+#   script
+# ChangeLog 2015-04-15 
+#   1. if suq submit failed, try MAX_TRY times, sleep 0.05 second for the next
+#   try
 import os
 import sys
 import myfunc
@@ -28,7 +36,7 @@ usage_short="""
 Usage: %s -nseq INT -jobid STR -outpath DIR -datapath DIR
        %s -email EMAIL -host IP -baseurl BASE_WWW_URL
        %s -nseq-this-user INT
-       %s [-force]
+       %s -only-get-cache [-force]
 
 Description: 
     BASE_WWW_URL e.g. topcons.net
@@ -40,11 +48,12 @@ Description:
     datapath should include query.fa
 
 OPTIONS:
+  -only-get-cache   Only get the cached results, this will be run on the front-end
   -force            Do not use cahced result
   -nseq-this-user   Number of sequences in the queue submitted by this user
   -h, --help    Print this help message and exit
 
-Created 2016-10-20, updated 2016-10-20, Nanjiang Shu 
+Created 2015-01-20, updated 2016-12-07, Nanjiang Shu
 """
 usage_exp="""
 Examples:
@@ -78,6 +87,8 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
         cmdline += "-baseurl \"%s\" "%(base_www_url)
     if g_params['isForceRun']:
         cmdline += "-force "
+    if g_params['isOnlyGetCache']:
+        cmdline += "-only-get-cache "
     code_str_list.append(cmdline)
 
     code = "\n".join(code_str_list)
@@ -186,6 +197,9 @@ def main(g_params):#{{{
             elif argv[i] in ["-force", "--force"]:
                 g_params['isForceRun'] = True
                 i += 1
+            elif argv[i] in ["-only-get-cache", "--only-get-cache"]:
+                g_params['isOnlyGetCache'] = True
+                i += 1
             elif argv[i] in ["-q", "--q"]:
                 g_params['isQuiet'] = True
                 i += 1
@@ -234,6 +248,7 @@ def InitGlobalParameter():#{{{
     g_params = {}
     g_params['isQuiet'] = True
     g_params['isForceRun'] = False
+    g_params['isOnlyGetCache'] = False
     g_params['fperr'] = None
     return g_params
 #}}}

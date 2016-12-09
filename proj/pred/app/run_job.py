@@ -1,18 +1,17 @@
 #!/usr/bin/env python
 # Description: run job
-
-# ChangeLog 
-
 import os
 import sys
 import subprocess
 import time
 import myfunc
+import webserver_common
 import glob
 import hashlib
 import shutil
 import datetime
 import site
+import fcntl
 progname =  os.path.basename(sys.argv[0])
 wspace = ''.join([" "]*len(progname))
 rundir = os.path.dirname(os.path.realpath(__file__))
@@ -20,19 +19,18 @@ webserver_root = os.path.realpath("%s/../../../"%(rundir))
 activate_env="%s/env/bin/activate_this.py"%(webserver_root)
 execfile(activate_env, dict(__file__=activate_env))
 
-blastdir = "%s/%s"%(rundir, "soft/topcons2_webserver/tools/blast-2.2.26")
-os.environ['SCAMPI_DIR'] = "/server/scampi"
-os.environ['MODHMM_BIN'] = "/server/modhmm/bin"
-os.environ['BLASTMAT'] = "%s/data"%(blastdir)
-os.environ['BLASTBIN'] = "%s/bin"%(blastdir)
-os.environ['BLASTDB'] = "%s/%s"%(rundir, "soft/topcons2_webserver/database/blast/")
-blastdb = "%s/%s"%(os.environ['BLASTDB'], "uniref90.fasta" )
-runscript = "%s/%s"%(rundir, "soft/FastPSSM/fastPSSM/fastPSSM.py")
-script_scampi = "%s/%s"%(rundir, "mySCAMPI_run.pl")
+site.addsitedir("%s/env/lib/python2.7/site-packages/"%(webserver_root))
+sys.path.append("/usr/local/lib/python2.7/dist-packages")
+
+runscript = "%s/%s"%(rundir, "soft/PRODRES/PRODRES/PRODRES.py")
+#runscript = "%s/%s"%(rundir, "soft/dummyrun.sh")
 
 basedir = os.path.realpath("%s/.."%(rundir)) # path of the application, i.e. pred/
 path_md5cache = "%s/static/md5"%(basedir)
 path_cache = "%s/static/result/cache"%(basedir)
+path_result = "%s/static/result/"%(basedir)
+gen_errfile = "%s/static/log/%s.err"%(basedir, progname)
+gen_logfile = "%s/static/log/%s.log"%(basedir, progname)
 
 contact_email = "nanjiang.shu@scilifelab.se"
 vip_user_list = [
@@ -41,11 +39,12 @@ vip_user_list = [
 
 # note that here the url should be without http://
 
+
 usage_short="""
 Usage: %s seqfile_in_fasta 
        %s -jobid JOBID -outpath DIR -tmpdir DIR
        %s -email EMAIL -baseurl BASE_WWW_URL
-       %s [-force]
+       %s -only-get-cache [-force]
 """%(progname, wspace, wspace, wspace)
 
 usage_ext="""\
@@ -53,10 +52,11 @@ Description:
     run job
 
 OPTIONS:
-  -force        Do not use cahced result
-  -h, --help    Print this help message and exit
+  -only-get-cache   Only get the cached results, this will be run on the front-end
+  -force            Do not use cahced result
+  -h, --help        Print this help message and exit
 
-Created 2015-02-05, updated 2015-02-12, Nanjiang Shu
+Created 2016-12-01, updated 2016-12-07, Nanjiang Shu
 """
 usage_exp="""
 Examples:
@@ -68,21 +68,6 @@ def PrintHelp(fpout=sys.stdout):#{{{
     print >> fpout, usage_ext
     print >> fpout, usage_exp#}}}
 
-def IsFrontEndNode(base_www_url):#{{{
-    """
-    check if the base_www_url is front-end node
-    if base_www_url is ip address, then not the front-end
-    otherwise yes
-    """
-    if base_www_url == "":
-        return False
-    else:
-        arr =  [x.isdigit() for x in base_www_url.split('.')]
-        if all(arr):
-            return False
-        else:
-            return True
-#}}}
 def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     all_begin_time = time.time()
 
@@ -90,6 +75,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     starttagfile   = "%s/runjob.start"%(outpath)
     runjob_errfile = "%s/runjob.err"%(outpath)
     runjob_logfile = "%s/runjob.log"%(outpath)
+    app_logfile = "%s/app.log"%(outpath)
     finishtagfile = "%s/runjob.finish"%(outpath)
     rmsg = ""
 
@@ -97,125 +83,102 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     resultpathname = jobid
 
     outpath_result = "%s/%s"%(outpath, resultpathname)
+    tmp_outpath_result = "%s/%s"%(tmpdir, resultpathname)
+
     tarball = "%s.tar.gz"%(resultpathname)
     zipfile = "%s.zip"%(resultpathname)
     tarball_fullpath = "%s.tar.gz"%(outpath_result)
     zipfile_fullpath = "%s.zip"%(outpath_result)
-    outfile = "%s/%s/Topcons/topcons.top"%(outpath_result, "seq_%d"%(0))
     resultfile_text = "%s/%s"%(outpath_result, "query.result.txt")
     mapfile = "%s/seqid_index_map.txt"%(outpath_result)
     finished_seq_file = "%s/finished_seqs.txt"%(outpath_result)
 
-
-
-    tmp_outpath_result = "%s/%s"%(tmpdir, resultpathname)
-    isOK = True
-    try:
-        os.makedirs(tmp_outpath_result)
-        isOK = True
-    except OSError:
-        msg = "Failed to create folder %s"%(tmp_outpath_result)
-        myfunc.WriteFile(msg+"\n", runjob_errfile, "a")
-        isOK = False
-        pass
-
-    try:
-        os.makedirs(outpath_result)
-        isOK = True
-    except OSError:
-        msg = "Failed to create folder %s"%(outpath_result)
-        myfunc.WriteFile(msg+"\n", runjob_errfile, "a")
-        isOK = False
-        pass
-
-
-    if isOK:
+    for folder in [outpath_result, tmp_outpath_result]:
         try:
-            open(finished_seq_file, 'w').close()
-        except:
-            pass
+            os.makedirs(folder)
+        except OSError:
+            msg = "Failed to create folder %s"%(folder)
+            myfunc.WriteFile(msg+"\n", gen_errfile, "a")
+            return 1
+
+    try:
+        open(finished_seq_file, 'w').close()
+    except:
+        pass
 #first getting result from caches
 # ==================================
 
-        maplist = []
-        maplist_simple = []
-        toRunDict = {}
-        hdl = myfunc.ReadFastaByBlock(infile, method_seqid=0, method_seq=0)
-        if hdl.failure:
-            isOK = False
-        else:
-            datetime = time.strftime("%Y-%m-%d %H:%M:%S")
-            rt_msg = myfunc.WriteFile(datetime, starttagfile)
+    maplist = []
+    maplist_simple = []
+    toRunDict = {}
+    hdl = myfunc.ReadFastaByBlock(infile, method_seqid=0, method_seq=0)
+    if hdl.failure:
+        isOK = False
+    else:
+        datetime = time.strftime("%Y-%m-%d %H:%M:%S")
+        rt_msg = myfunc.WriteFile(datetime, starttagfile)
 
-            recordList = hdl.readseq()
-            cnt = 0
-            origpath = os.getcwd()
-            while recordList != None:
-                for rd in recordList:
-                    isSkip = False
-                    # temp outpath for the sequence is always seq_0, and I feed
-                    # only one seq a time to the workflow
-                    tmp_outpath_this_seq = "%s/%s"%(tmp_outpath_result, "seq_%d"%0)
-                    outpath_this_seq = "%s/%s"%(outpath_result, "seq_%d"%cnt)
-                    subfoldername_this_seq = "seq_%d"%(cnt)
-                    if os.path.exists(tmp_outpath_this_seq):
+        recordList = hdl.readseq()
+        cnt = 0
+        origpath = os.getcwd()
+        while recordList != None:
+            for rd in recordList:
+                isSkip = False
+                # temp outpath for the sequence is always seq_0, and I feed
+                # only one seq a time to the workflow
+                tmp_outpath_this_seq = "%s/%s"%(tmp_outpath_result, "seq_%d"%0)
+                outpath_this_seq = "%s/%s"%(outpath_result, "seq_%d"%cnt)
+                subfoldername_this_seq = "seq_%d"%(cnt)
+                if os.path.exists(tmp_outpath_this_seq):
+                    try:
+                        shutil.rmtree(tmp_outpath_this_seq)
+                    except OSError:
+                        pass
+
+                maplist.append("%s\t%d\t%s\t%s"%("seq_%d"%cnt, len(rd.seq),
+                    rd.description, rd.seq))
+                maplist_simple.append("%s\t%d\t%s"%("seq_%d"%cnt, len(rd.seq),
+                    rd.description))
+                if not g_params['isForceRun']:
+                    md5_key = hashlib.md5(rd.seq).hexdigest()
+                    subfoldername = md5_key[:2]
+                    cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
+                    if os.path.exists(cachedir):
+                        # create a symlink to the cache
+                        rela_path = os.path.relpath(cachedir, outpath_result) #relative path
+                        os.chdir(outpath_result)
+                        os.symlink(rela_path, subfoldername_this_seq)
+
+                        if os.path.exists(outpath_this_seq):
+                            runtime = 0.0 #in seconds
+                            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
+                                    outpath_this_seq, "final-prediction")
+                            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                            info_finish = [ "seq_%d"%cnt, str(len(rd.seq)),
+                                    str(loc_def), str(loc_def_score),
+                                    "cached", str(runtime), rd.description]
+                            myfunc.WriteFile("\t".join(info_finish)+"\n",
+                                    finished_seq_file, "a", isFlush=True)
+                            isSkip = True
+
+                if not isSkip:
+                    # first try to delete the outfolder if exists
+                    if os.path.exists(outpath_this_seq):
                         try:
-                            shutil.rmtree(tmp_outpath_this_seq)
+                            shutil.rmtree(outpath_this_seq)
                         except OSError:
                             pass
+                    origIndex = cnt
+                    numTM = 0
+                    toRunDict[origIndex] = [rd.seq, numTM, rd.description] #init value for numTM is 0
 
-                    maplist.append("%s\t%d\t%s\t%s"%("seq_%d"%cnt, len(rd.seq),
-                        rd.description, rd.seq))
-                    maplist_simple.append("%s\t%d\t%s"%("seq_%d"%cnt, len(rd.seq),
-                        rd.description))
-                    if not g_params['isForceRun']:
-                        md5_key = hashlib.md5(rd.seq).hexdigest()
-                        subfoldername = md5_key[:2]
-                        cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
-                        if os.path.exists(cachedir):
-                            # create a symlink to the cache
-                            rela_path = os.path.relpath(cachedir, outpath_result) #relative path
-                            os.chdir(outpath_result)
-                            os.symlink(rela_path, subfoldername_this_seq)
-
-                            if os.path.exists(outpath_this_seq):
-                                runtime = 0.0 #in seconds
-                                topfile = "%s/%s/topcons.top"%(
-                                        outpath_this_seq, "Topcons")
-                                top = myfunc.ReadFile(topfile).strip()
-                                numTM = myfunc.CountTM(top)
-                                posSP = myfunc.GetSPPosition(top)
-                                if len(posSP) > 0:
-                                    isHasSP = True
-                                else:
-                                    isHasSP = False
-                                info_finish = [ "seq_%d"%cnt,
-                                        str(len(rd.seq)), str(numTM),
-                                        str(isHasSP), "cached", str(runtime),
-                                        rd.description]
-                                myfunc.WriteFile("\t".join(info_finish)+"\n",
-                                        finished_seq_file, "a", isFlush=True)
-                                isSkip = True
-
-                    if not isSkip:
-                        # first try to delete the outfolder if exists
-                        if os.path.exists(outpath_this_seq):
-                            try:
-                                shutil.rmtree(outpath_this_seq)
-                            except OSError:
-                                pass
-                        origIndex = cnt
-                        numTM = 0
-                        toRunDict[origIndex] = [rd.seq, numTM, rd.description] #init value for numTM is 0
-
-                    cnt += 1
-                recordList = hdl.readseq()
-            hdl.close()
-        myfunc.WriteFile("\n".join(maplist_simple)+"\n", mapfile)
+                cnt += 1
+            recordList = hdl.readseq()
+        hdl.close()
+    myfunc.WriteFile("\n".join(maplist_simple)+"\n", mapfile)
 
 
-        # run scampi single to estimate the number of TM helices and then run
-        # the query sequences in the descending order of numTM
+    if not g_params['isOnlyGetCache']:
         torun_all_seqfile = "%s/%s"%(tmp_outpath_result, "query.torun.fa")
         dumplist = []
         for key in toRunDict:
@@ -224,23 +187,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
         myfunc.WriteFile("\n".join(dumplist)+"\n", torun_all_seqfile, "w")
         del dumplist
 
-        topfile_scampiseq = "%s/%s"%(tmp_outpath_result, "query.torun.fa.topo")
-        if os.path.exists(torun_all_seqfile):
-            # run scampi to estimate the number of TM helices
-            cmd = [script_scampi, torun_all_seqfile, "-outpath", tmp_outpath_result]
-            try:
-                rmsg = subprocess.check_output(cmd)
-            except subprocess.CalledProcessError, e:
-                g_params['runjob_err'].append(str(e)+"\n")
-                pass
-        if os.path.exists(topfile_scampiseq):
-            (idlist_scampi, annolist_scampi, toplist_scampi) = myfunc.ReadFasta(topfile_scampiseq)
-            for jj in xrange(len(idlist_scampi)):
-                numTM = myfunc.CountTM(toplist_scampi[jj])
-                try:
-                    toRunDict[int(idlist_scampi[jj])][1] = numTM
-                except (KeyError, ValueError, TypeError):
-                    pass
 
         sortedlist = sorted(toRunDict.items(), key=lambda x:x[1][1], reverse=True)
         #format of sortedlist [(origIndex: [seq, numTM, description]), ...]
@@ -265,7 +211,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                     pass
 
             seqfile_this_seq = "%s/%s"%(tmp_outpath_result, "query_%d.fa"%(origIndex))
-            seqcontent = ">%d\n%s\n"%(origIndex, seq)
+            seqcontent = ">query_%d\n%s\n"%(origIndex, seq)
             myfunc.WriteFile(seqcontent, seqfile_this_seq, "w")
 
             if not os.path.exists(seqfile_this_seq):
@@ -273,7 +219,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 continue
 
 
-            cmd = ["python", runscript, seqfile_this_seq,  tmp_outpath_result, blastdir, blastdb]
+            cmd = ["python", runscript, seqfile_this_seq,  tmp_outpath_this_seq, "-verbose"]
             cmdline = " ".join(cmd)
             g_params['runjob_log'].append(" ".join(cmd))
             begin_time = time.time()
@@ -287,6 +233,15 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 pass
             end_time = time.time()
             runtime_in_sec = end_time - begin_time
+
+            aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq)
+            if not os.path.exists(aaseqfile):
+                try:
+                    shutil.copyfile(seqfile_this_seq, aaseqfile)
+                except:
+                    g_params['runjob_err'].append("failed to copy file %s to %s"%(seqfile_this_seq, aaseqfile))
+                    pass
+
 
             if os.path.exists(tmp_outpath_this_seq):
                 cmd = ["mv","-f", tmp_outpath_this_seq, outpath_this_seq]
@@ -310,28 +265,23 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                 if isCmdSuccess:
                     runtime = runtime_in_sec #in seconds
-                    topfile = "%s/%s/topcons.top"%(
-                            outpath_this_seq, "Topcons")
-                    top = myfunc.ReadFile(topfile).strip()
-                    numTM = myfunc.CountTM(top)
-                    posSP = myfunc.GetSPPosition(top)
-                    if len(posSP) > 0:
-                        isHasSP = True
-                    else:
-                        isHasSP = False
-                    info_finish = [ "seq_%d"%origIndex, str(len(seq)), str(numTM),
-                            str(isHasSP), "newrun", str(runtime), description]
+                    finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
+                            outpath_this_seq, "final-prediction")
+                    (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                    info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
+                            str(loc_def), str(loc_def_score),
+                            "newrun", str(runtime), description]
                     myfunc.WriteFile("\t".join(info_finish)+"\n",
                             finished_seq_file, "a", isFlush=True)
                     # now write the text output for this seq
 
                     info_this_seq = "%s\t%d\t%s\t%s"%("seq_%d"%origIndex, len(seq), description, seq)
                     resultfile_text_this_seq = "%s/%s"%(outpath_this_seq, "query.result.txt")
-                    myfunc.WriteTOPCONSTextResultFile(resultfile_text_this_seq,
+                    webserver_common.WriteSubconsTextResultFile(resultfile_text_this_seq,
                             outpath_result, [info_this_seq], runtime_in_sec, g_params['base_www_url'])
                     # create or update the md5 cache
                     # create cache only on the front-end
-                    if IsFrontEndNode(g_params['base_www_url']):
+                    if webserver_common.IsFrontEndNode(g_params['base_www_url']):
                         md5_key = hashlib.md5(seq).hexdigest()
                         subfoldername = md5_key[:2]
                         md5_subfolder = "%s/%s"%(path_cache, subfoldername)
@@ -367,23 +317,19 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                             except:
                                 pass
 
-        all_end_time = time.time()
-        all_runtime_in_sec = all_end_time - all_begin_time
+    all_end_time = time.time()
+    all_runtime_in_sec = all_end_time - all_begin_time
 
-        if len(g_params['runjob_log']) > 0 :
-            rt_msg = myfunc.WriteFile("\n".join(g_params['runjob_log'])+"\n", runjob_logfile, "a")
-            if rt_msg:
-                g_params['runjob_err'].append(rt_msg)
+    if len(g_params['runjob_log']) > 0 :
+        rt_msg = myfunc.WriteFile("\n".join(g_params['runjob_log'])+"\n", runjob_logfile, "a")
+        if rt_msg:
+            g_params['runjob_err'].append(rt_msg)
 
-        datetime = time.strftime("%Y-%m-%d %H:%M:%S")
-        if os.path.exists(finished_seq_file):
-            rt_msg = myfunc.WriteFile(datetime, finishtagfile)
-            if rt_msg:
-                g_params['runjob_err'].append(rt_msg)
 
-# now write the text output to a single file
+    if not g_params['isOnlyGetCache'] or len(toRunDict) == 0:
+        # now write the text output to a single file
         statfile = "%s/%s"%(outpath_result, "stat.txt")
-        myfunc.WriteTOPCONSTextResultFile(resultfile_text, outpath_result, maplist,
+        webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
                 all_runtime_in_sec, g_params['base_www_url'], statfile=statfile)
 
         # now making zip instead (for windows users)
@@ -397,49 +343,57 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             g_params['runjob_err'].append(str(e))
             pass
 
-
-    isSuccess = False
-    if (os.path.exists(finishtagfile) and os.path.exists(zipfile_fullpath)):
-        isSuccess = True
-        # delete the tmpdir if succeeded
-        if g_params['runjob_err'] == "":
-            shutil.rmtree(tmpdir) #DEBUG, keep tmpdir
-    else:
-        isSuccess = False
-        failtagfile = "%s/runjob.failed"%(outpath)
+        # write finish tag file
         datetime = time.strftime("%Y-%m-%d %H:%M:%S")
-        rt_msg = myfunc.WriteFile(datetime, failtagfile)
-        if rt_msg:
-            g_params['runjob_err'].append(rt_msg)
+        if os.path.exists(finished_seq_file):
+            rt_msg = myfunc.WriteFile(datetime, finishtagfile)
+            if rt_msg:
+                g_params['runjob_err'].append(rt_msg)
+
+        isSuccess = False
+        if (os.path.exists(finishtagfile) and os.path.exists(zipfile_fullpath)):
+            isSuccess = True
+        else:
+            isSuccess = False
+            failtagfile = "%s/runjob.failed"%(outpath)
+            datetime = time.strftime("%Y-%m-%d %H:%M:%S")
+            rt_msg = myfunc.WriteFile(datetime, failtagfile)
+            if rt_msg:
+                g_params['runjob_err'].append(rt_msg)
 
 # send the result to email
 # do not sendmail at the cloud VM
-    if (g_params['base_www_url'].find("topcons.net") != -1 and
-            myfunc.IsValidEmailAddress(email)):
-        from_email = "info@topcons.net"
-        to_email = email
-        subject = "Your result for TOPCONS2 JOBID=%s"%(jobid)
-        if isSuccess:
-            bodytext = """
-Your result is ready at %s/pred/result/%s
+        if (g_params['base_www_url'].find("bioinfo.se") != -1 and
+                myfunc.IsValidEmailAddress(email)):
+            from_email = "info@prodres.bioinfo.se"
+            to_email = email
+            subject = "Your result for PRODRES JOBID=%s"%(jobid)
+            if isSuccess:
+                bodytext = """
+ Your result is ready at %s/pred/result/%s
 
-Thanks for using TOPCONS2
+ Thanks for using PRODRES
 
-        """%(g_params['base_www_url'], jobid)
-        else:
-            bodytext="""
+            """%(g_params['base_www_url'], jobid)
+            else:
+                bodytext="""
 We are sorry that your job with jobid %s is failed.
 
 Please contact %s if you have any questions.
 
 Attached below is the error message:
 %s
-            """%(jobid, contact_email, "\n".join(g_params['runjob_err']))
-        g_params['runjob_log'].append("Sendmail %s -> %s, %s"% (from_email, to_email, subject)) #debug
-        rtValue = myfunc.Sendmail(from_email, to_email, subject, bodytext)
-        if rtValue != 0:
-            g_params['runjob_err'].append("Sendmail to {} failed with status {}".format(to_email, rtValue))
+                """%(jobid, contact_email, "\n".join(g_params['runjob_err']))
+            g_params['runjob_log'].append("Sendmail %s -> %s, %s"% (from_email, to_email, subject)) #debug
+            rtValue = myfunc.Sendmail(from_email, to_email, subject, bodytext)
+            if rtValue != 0:
+                g_params['runjob_err'].append("Sendmail to {} failed with status {}".format(to_email, rtValue))
 
+    if g_params['runjob_err'] == "":
+        try:
+            shutil.rmtree(tmpdir) #DEBUG, keep tmpdir
+        except:
+            g_params['runjob_err'].append("Failed to delete tmpdir %s"%(tmpdir))
     if len(g_params['runjob_err']) > 0:
         rt_msg = myfunc.WriteFile("\n".join(g_params['runjob_err'])+"\n", runjob_errfile, "w")
         return 1
@@ -488,6 +442,9 @@ def main(g_params):#{{{
             elif argv[i] in ["-force", "--force"]:
                 g_params['isForceRun'] = True
                 i += 1
+            elif argv[i] in ["-only-get-cache", "--only-get-cache"]:
+                g_params['isOnlyGetCache'] = True
+                i += 1
             else:
                 print >> sys.stderr, "Error! Wrong argument:", argv[i]
                 return 1
@@ -498,6 +455,20 @@ def main(g_params):#{{{
     if jobid == "":
         print >> sys.stderr, "%s: jobid not set. exit"%(sys.argv[0])
         return 1
+
+    g_params['jobid'] = jobid
+    # create a lock file in the resultpath when run_job.py is running for this
+    # job, so that daemon will not run on this folder
+    lockname = "runjob.lock"
+    lock_file = "%s/%s/%s"%(path_result, jobid, lockname)
+    g_params['lockfile'] = lock_file
+    fp = open(lock_file, 'w')
+    try:
+        fcntl.lockf(fp, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except IOError:
+        print >> sys.stderr, "Another instance of %s is running"%(progname)
+        return 1
+
 
     if myfunc.checkfile(infile, "infile") != 0:
         return 1
@@ -532,9 +503,19 @@ def InitGlobalParameter():#{{{
     g_params['runjob_log'] = []
     g_params['runjob_err'] = []
     g_params['isForceRun'] = False
+    g_params['isOnlyGetCache'] = False
     g_params['base_www_url'] = ""
+    g_params['jobid'] = ""
+    g_params['lockfile'] = ""
     return g_params
 #}}}
 if __name__ == '__main__' :
     g_params = InitGlobalParameter()
-    sys.exit(main(g_params))
+    status = main(g_params)
+    if os.path.exists(g_params['lockfile']):
+        try:
+            os.remove(g_params['lockfile'])
+        except:
+            myfunc.WriteFile("Failed to delete lockfile %s\n"%(g_params['lockfile']), gen_errfile, "a", True)
+
+    sys.exit(status)
