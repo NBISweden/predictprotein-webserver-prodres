@@ -31,6 +31,8 @@ class SubmissionForm(forms.Form):
             required=False)
     seqfile = forms.FileField(label="Alternatively, upload a text file in FASTA format upto 100 MB", required=False)
     jobname = forms.CharField(label='Job name (optional)', max_length=100, required=False)
+    second_method_choices = (('1', 'psiblast'), ('2', 'jackhmmer'))
+    state = forms.TypedChoiceField(label='Second search method', choices=second_method_choices, initial='1')
     email = forms.EmailField(label='Email (recommended for batch submissions)', max_length=100, required=False)
 
 

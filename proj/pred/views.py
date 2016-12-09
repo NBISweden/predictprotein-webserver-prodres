@@ -452,7 +452,7 @@ def GetNumSameUserInQueue(rstdir, host_ip, email):#{{{
     cmdline = " ".join(cmd)
     myfunc.WriteFile("cmdline: " + cmdline +"\n", logfile, "a")
     try:
-        suq_ls_content =  myfunc.check_output(cmd, stderr=subprocess.STDOUT)
+        suq_ls_content =  subprocess.check_output(cmd, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError, e:
         myfunc.WriteFile(str(e) +"\n", logfile, "a")
         return numseq_this_user
@@ -864,7 +864,7 @@ def SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False):#{{{
         cmd += ["-only-get-cache"]
     cmdline = " ".join(cmd)
     try:
-        rmsg = myfunc.check_output(cmd, stderr=subprocess.STDOUT)
+        rmsg = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         myfunc.WriteFile("cmdline: " + cmdline +"\n", debugfile, "a", True)
         myfunc.WriteFile(rmsg+"\n", debugfile, "a", True)
     except subprocess.CalledProcessError, e:
@@ -1657,7 +1657,7 @@ def get_serverstatus(request):#{{{
     cmd = [suq_exec, "-b", suq_basedir, "ls"]
     cmdline = " ".join(cmd)
     try:
-        suq_ls_content =  myfunc.check_output(cmd, stderr=subprocess.STDOUT)
+        suq_ls_content =  subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         lines = suq_ls_content.split("\n")
         cntjob = 0
         for line in lines:
@@ -1979,7 +1979,7 @@ def help_wsdl_api(request):#{{{
             continue
         cmd = [api_script_file, "-h"]
         try:
-            usage = myfunc.check_output(cmd)
+            usage = subprocess.check_output(cmd)
         except subprocess.CalledProcessError, e:
             usage = ""
         api_script_info_list.append([api_script_lang_list[i], api_script_basename, usage])

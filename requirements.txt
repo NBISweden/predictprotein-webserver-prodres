@@ -1,10 +1,10 @@
 misc/spyne.github.tar.gz
+misc/requests-2.12.3.tar.gz
 
 Django==1.6.2
 pysqlite
 lxml==3.6.0
 suds
-requests
 biopython
 django-eztables
 
