@@ -459,6 +459,12 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 
     errfile = "%s/%s"%(rstdir, "runjob.err")
     finished_seq_file = "%s/finished_seqs.txt"%(outpath_result)
+    query_parafile = "%s/query.para.txt"%(outpath)
+
+    query_para = ""
+    content = myfunc.ReadFile(query_parafile)
+    if content != "":
+        query_para = json.loads(content)
     tmpdir = "%s/tmpdir"%(rstdir)
     qdinittagfile = "%s/runjob.qdinit"%(rstdir)
     failedtagfile = "%s/%s"%(rstdir, "runjob.failed")
@@ -514,7 +520,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                 isSkip = False
                 outpath_this_seq = "%s/%s"%(outpath_result, "seq_%d"%i)
                 subfoldername_this_seq = "seq_%d"%(i)
-                md5_key = hashlib.md5(seqList[i]).hexdigest()
+                md5_key = hashlib.md5(seqList[i]+str(query_para)).hexdigest()
                 subfoldername = md5_key[:2]
                 cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
                 if os.path.exists(cachedir):
@@ -735,6 +741,12 @@ def GetResult(jobid):#{{{
 
     torun_idx_file = "%s/torun_seqindex.txt"%(rstdir) # ordered seq index to run
     finished_idx_file = "%s/finished_seqindex.txt"%(rstdir)
+    query_parafile = "%s/query.para.txt"%(outpath)
+
+    query_para = ""
+    content = myfunc.ReadFile(query_parafile)
+    if content != "":
+        query_para = json.loads(content)
     failed_idx_file = "%s/failed_seqindex.txt"%(rstdir)
 
     starttagfile = "%s/%s"%(rstdir, "runjob.start")
@@ -934,7 +946,7 @@ def GetResult(jobid):#{{{
                                 shutil.rmtree("%s/%s"%(tmpdir, remote_jobid))
 
                                 # create or update the md5 cache
-                                md5_key = hashlib.md5(seq).hexdigest()
+                                md5_key = hashlib.md5(seq+str(query_para)).hexdigest()
                                 subfoldername = md5_key[:2]
                                 md5_subfolder = "%s/%s"%(path_cache, subfoldername)
                                 cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)

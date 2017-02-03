@@ -19,46 +19,53 @@
     Force run (do not use cached results): <input type="checkbox" name="forcerun">
 
     <br><br>
-    <a href="#" onClick="javascript:hideShow('options');return false;" style="text-decoration:none; color:#333333"><b>Advanced options</b><img id="arrow" src='{{STATIC_URL}}images/arrow90.png' border=0>
+    <a href="#" onClick="javascript:hideShow('options');return false;" style="text-decoration:none; color:#333EF3"><b>Advanced options</b><img id="arrow" src='{{STATIC_URL}}images/arrow90.png' border=0>
     </a>
 
     <br>
     <table cellspacing=0 cellpadding=0 border=0 id="options">
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=10></td></tr>
-        <tr><td colspan=2>Options for PfamScan</td></tr>
+        <tr><td colspan=2><b>Options for PfamScan</b></td></tr>
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=5></td></tr>
         <tr><td style="padding-left: 20px;">
-                E-value&nbsp;</td><td> <input type="number" name="pfamscan-evalue" value="10" min="0" max="10000">
+                E-value&nbsp;</td><td> <input type="number" name="pfamscan_evalue" value="10" min="0" max="10000">
         </td></tr>
         <tr><td style="padding-left: 20px;">
-                Show overlapping hits within clan&nbsp;</td><td> <input type="checkbox" name="pfamscan-clanoverlap" checked>
+                Show overlapping hits within clan&nbsp;</td><td> <input type="checkbox" name="pfamscan_clanoverlap" checked>
         </td></tr>
 
 
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=5></td></tr>
-        <tr><td colspan=2>Options for Jackhmmer</td></tr>
+        <tr><td colspan=2><b>Options for Jackhmmer</b></td></tr>
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=5></td></tr>
         <tr><td style="padding-left: 20px;">
-                E-value&nbsp;</td><td> <input type="number" step="any" name="jackhmmer-evalue" value="" min="0" max="10000">
+                Threshold Type&nbsp;
+                </td><td> <input type="radio" name="jackhmmer_threshold_type" value="e-value" >E-value
+                &nbsp;
+                <input type="radio" name="jackhmmer_threshold_type" value="bit-score" checked>Bit-score
+                &nbsp;
         </td></tr>
         <tr><td style="padding-left: 20px;">
-                Bitscore&nbsp;</td><td> <input type="number" step="any" name="jackhmmer-bitscore" value="25" min="0" max="10000">
+                E-value&nbsp;</td><td> <input type="number" step="any" name="jackhmmer_evalue" value="" min="0" max="10000">
         </td></tr>
         <tr><td style="padding-left: 20px;">
-                Iteration&nbsp;</td><td> <input type="number" name="jackhmmer-iteration" value="3" min="0" max="10000">
+                Bitscore&nbsp;</td><td> <input type="number" step="any" name="jackhmmer_bitscore" value="25" min="0" max="10000">
+        </td></tr>
+        <tr><td style="padding-left: 20px;">
+                Iteration&nbsp;</td><td> <input type="number" name="jackhmmer_iteration" value="3" min="0" max="10000">
         </td></tr>
 
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=5></td></tr>
-        <tr><td colspan=2>Options for PSIBLAST</td></tr>
+        <tr><td colspan=2><b>Options for PSIBLAST</b></td></tr>
         <tr><td colspan=2><img src='{{STATIC_URL}}images/0.gif' width=1 height=5></td></tr>
         <tr><td style="padding-left: 20px;">
-                E-value&nbsp;</td><td> <input type="number" step="any" name="psiblast-evalue" value="0.1" min="0" max="10000">
+                E-value&nbsp;</td><td> <input type="number" step="any" name="psiblast_evalue" value="0.1" min="0" max="10000">
         </td></tr>
         <tr><td style="padding-left: 20px;">
-                Iteration&nbsp;</td><td> <input type="number" name="psiblast-iteration" value="3" min="0" max="100">
+                Iteration&nbsp;</td><td> <input type="number" name="psiblast_iteration" value="3" min="0" max="100">
         </td></tr>
         <tr><td style="padding-left: 20px;">
-                Out format&nbsp;</td><td> <input type="number" name="psiblast-outfmt" value="0" min="0" max="11">
+                Out format&nbsp;</td><td> <input type="number" name="psiblast_outfmt" value="0" min="0" max="11">
         </td></tr>
 
         </table>

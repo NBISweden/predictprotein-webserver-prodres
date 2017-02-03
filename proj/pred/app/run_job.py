@@ -12,6 +12,7 @@ import shutil
 import datetime
 import site
 import fcntl
+import json
 progname =  os.path.basename(sys.argv[0])
 wspace = ''.join([" "]*len(progname))
 rundir = os.path.dirname(os.path.realpath(__file__))
@@ -22,6 +23,13 @@ execfile(activate_env, dict(__file__=activate_env))
 site.addsitedir("%s/env/lib/python2.7/site-packages/"%(webserver_root))
 sys.path.append("/usr/local/lib/python2.7/dist-packages")
 
+path_pfamscan = "%s/misc/PfamScan"%(webserver_root)
+path_pfamdatabase = "%s/soft/PRODRES/databases"%(rundir)
+path_pfamscanscript = "%s/pfam_scan.pl"%(path_pfamscan)
+blastdb = "%s/soft/PRODRES/databases/blastdb/uniref90.fasta"%(rundir)
+if 'PERL5LIB' not in os.environ:
+    os.environ['PERL5LIB'] = ""
+os.environ['PERL5LIB'] = os.environ['PERL5LIB'] + ":" + path_pfamscan
 runscript = "%s/%s"%(rundir, "soft/PRODRES/PRODRES/PRODRES.py")
 #runscript = "%s/%s"%(rundir, "soft/dummyrun.sh")
 
@@ -77,6 +85,13 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     runjob_logfile = "%s/runjob.log"%(outpath)
     app_logfile = "%s/app.log"%(outpath)
     finishtagfile = "%s/runjob.finish"%(outpath)
+    query_parafile = "%s/query.para.txt"%(outpath)
+
+    query_para = ""
+    content = myfunc.ReadFile(query_parafile)
+    if content != "":
+        query_para = json.loads(content)
+
     rmsg = ""
 
 
@@ -140,7 +155,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 maplist_simple.append("%s\t%d\t%s"%("seq_%d"%cnt, len(rd.seq),
                     rd.description))
                 if not g_params['isForceRun']:
-                    md5_key = hashlib.md5(rd.seq).hexdigest()
+                    md5_key = hashlib.md5(rd.seq+str(query_para)).hexdigest()
                     subfoldername = md5_key[:2]
                     cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
                     if os.path.exists(cachedir):
@@ -219,7 +234,31 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 continue
 
 
-            cmd = ["python", runscript, seqfile_this_seq,  tmp_outpath_this_seq, "-verbose"]
+            cmd = ["python", runscript, "--input", seqfile_this_seq, "--output", tmp_outpath_this_seq, "--pfam-dir", path_pfamdatabase, "--pfamscan-script", path_pfamscanscript, "--uniprot-db-fasta", blastdb, "--verbose"]
+
+            if 'second_method' in query_para and query_para['second_method'] != "":
+                cmd += ['--second-search', query_para['second_method']]
+            if 'pfamscan_evalue' in query_para and query_para['pfamscan_evalue'] != "":
+                cmd += ['--pfamscan_e-val', query_para['pfamscan_evalue']]
+            if 'pfamscan_bitscore' in query_para and query_para['pfamscan_bitscore'] != "":
+                cmd += ['--pfamscan_bitscore', query_para['pfamscan_bitscore']]
+            if 'jackhmmer_iteration' in query_para and query_para['jackhmmer_iteration'] != "":
+                cmd += ['--jackhmmer_max_iter', query_para['jackhmmer_iteration']]
+            if 'jackhmmer_evalue' in query_para and query_para['jackhmmer_evalue'] != "":
+                cmd += ['--jackhmmer_e-val', query_para['jackhmmer_evalue']]
+            if 'psiblast_iteration' in query_para and query_para['psiblast_iteration'] != "":
+                cmd += ['--psiblast_iter', query_para['psiblast_iteration']]
+            if 'psiblast_outfmt' in query_para and query_para['psiblast_outfmt'] != "":
+                cmd += ['--psiblast_outfmt', query_para['psiblast_outfmt']]
+            if 'jackhmmer_threshold_type' in query_para and query_para['jackhmmer_threshold_type'] != "":
+                cmd += ['--jackhmmer-threshold-type', query_para['jackhmmer_threshold_type']]
+            if 'pfamscan_clanoverlap' in query_para:
+                if query_para['pfamscan_clanoverlap'] == False:
+                    cmd += ['--pfamscan_clan-overlap', 'no']
+                else:
+                    cmd += ['--pfamscan_clan-overlap', 'yes']
+
+
             cmdline = " ".join(cmd)
             g_params['runjob_log'].append(" ".join(cmd))
             begin_time = time.time()
@@ -234,7 +273,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             end_time = time.time()
             runtime_in_sec = end_time - begin_time
 
-            aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq)
+            aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq+os.sep+"query_0")
             if not os.path.exists(aaseqfile):
                 try:
                     shutil.copyfile(seqfile_this_seq, aaseqfile)
@@ -244,7 +283,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
 
             if os.path.exists(tmp_outpath_this_seq):
-                cmd = ["mv","-f", tmp_outpath_this_seq, outpath_this_seq]
+                cmd = ["mv","-f", tmp_outpath_this_seq+os.sep+"query_0", outpath_this_seq]
                 isCmdSuccess = False
                 try:
                     subprocess.check_output(cmd)
@@ -277,12 +316,12 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                     info_this_seq = "%s\t%d\t%s\t%s"%("seq_%d"%origIndex, len(seq), description, seq)
                     resultfile_text_this_seq = "%s/%s"%(outpath_this_seq, "query.result.txt")
-                    webserver_common.WriteSubconsTextResultFile(resultfile_text_this_seq,
-                            outpath_result, [info_this_seq], runtime_in_sec, g_params['base_www_url'])
+                    #webserver_common.WriteSubconsTextResultFile(resultfile_text_this_seq,
+                    #        outpath_result, [info_this_seq], runtime_in_sec, g_params['base_www_url'])
                     # create or update the md5 cache
                     # create cache only on the front-end
                     if webserver_common.IsFrontEndNode(g_params['base_www_url']):
-                        md5_key = hashlib.md5(seq).hexdigest()
+                        md5_key = hashlib.md5(seq+str(query_para)).hexdigest()
                         subfoldername = md5_key[:2]
                         md5_subfolder = "%s/%s"%(path_cache, subfoldername)
                         cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
@@ -329,8 +368,8 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     if not g_params['isOnlyGetCache'] or len(toRunDict) == 0:
         # now write the text output to a single file
         statfile = "%s/%s"%(outpath_result, "stat.txt")
-        webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
-                all_runtime_in_sec, g_params['base_www_url'], statfile=statfile)
+        #webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
+        #        all_runtime_in_sec, g_params['base_www_url'], statfile=statfile)
 
         # now making zip instead (for windows users)
         # note that zip rq will zip the real data for symbolic links

@@ -10,17 +10,6 @@ class Query(models.Model):
     seqname = models.CharField(max_length=100)
     submit_date = models.DateTimeField('date submitted')
 
-class SubmissionForm_bak(forms.Form):
-    """
-    Defining the form to submit queries
-    """
-    rawseq = forms.CharField(label='', max_length=100000,
-            widget=forms.Textarea(attrs={'cols': 62, 'rows': 10}),
-            required=False)
-    seqfile = forms.FileField(label="Alternatively, upload a text file in FASTA format upto 100 MB", required=False)
-    jobname = forms.CharField(label='Job name (optional)', max_length=100, required=False)
-    email = forms.CharField(label='Email (optional)', max_length=100, required=False)
-
 
 class SubmissionForm(forms.Form):
     """
@@ -32,7 +21,8 @@ class SubmissionForm(forms.Form):
     seqfile = forms.FileField(label="Alternatively, upload a text file in FASTA format upto 100 MB", required=False)
     jobname = forms.CharField(label='Job name (optional)', max_length=100, required=False)
     second_method_choices = (('1', 'psiblast'), ('2', 'jackhmmer'))
-    state = forms.TypedChoiceField(label='Second search method', choices=second_method_choices, initial='1')
+    second_method = forms.TypedChoiceField(label='Second search method', choices=second_method_choices, initial='1', required=False)
+
     email = forms.EmailField(label='Email (recommended for batch submissions)', max_length=100, required=False)
 
 

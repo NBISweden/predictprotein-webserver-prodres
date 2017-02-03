@@ -7,6 +7,7 @@ import datetime
 import time
 import math
 import shutil
+import json
 
 
 os.environ['TZ'] = 'Europe/Stockholm'
@@ -58,6 +59,7 @@ path_stat = "%s/stat"%(path_log)
 path_result = "%s/static/result"%(SITE_ROOT)
 path_tmp = "%s/static/tmp"%(SITE_ROOT)
 path_md5 = "%s/static/md5"%(SITE_ROOT)
+MAX_ROWS_TO_SHOW_IN_TABLE = 2000
 
 
 python_exec = os.path.realpath("%s/../../env/bin/python"%(SITE_ROOT))
@@ -183,24 +185,26 @@ def submit_seq(request):#{{{
 
             jobname = request.POST['jobname']
             email = request.POST['email']
+            second_method = request.POST['second_method']
             rawseq = request.POST['rawseq'] + "\n" # force add a new line
-            Nfix = ""
-            Cfix = ""
-            fix_str = ""
+            pfamscan_evalue = request.POST['pfamscan_evalue']
+            pfamscan_clanoverlap = False
+            jackhmmer_threshold_type = request.POST['jackhmmer_threshold_type']
+            jackhmmer_evalue =  request.POST['jackhmmer_evalue']
+            jackhmmer_bitscore =  request.POST['jackhmmer_bitscore']
+            jackhmmer_iteration = request.POST['jackhmmer_iteration']
+            psiblast_evalue = request.POST['psiblast_evalue']
+            psiblast_iteration = request.POST['psiblast_iteration']
+            psiblast_outfmt =  request.POST['psiblast_outfmt']
             isForceRun = False
-            try:
-                Nfix = request.POST['Nfix']
-            except:
-                pass
-            try:
-                Cfix = request.POST['Cfix']
-            except:
-                pass
-            try:
-                fix_str = request.POST['fix_str']
-            except:
-                pass
 
+            for tup in form.second_method_choices:
+                if tup[0] == second_method:
+                    second_method = tup[1]
+                    break
+
+            if 'pfamscan_clanoverlap' in request.POST:
+                pfamscan_clanoverlap = True
             if 'forcerun' in request.POST:
                 isForceRun = True
 
@@ -219,9 +223,15 @@ def submit_seq(request):#{{{
             query['client_ip'] = client_ip
             query['errinfo'] = ""
             query['method_submission'] = "web"
-            query['Nfix'] = Nfix
-            query['Cfix'] = Cfix
-            query['fix_str'] = fix_str
+            query['second_method'] = second_method
+            query['pfamscan_evalue'] = pfamscan_evalue
+            query['pfamscan_clanoverlap'] = pfamscan_clanoverlap
+            query['jackhmmer_threshold_type'] = jackhmmer_threshold_type
+            query['jackhmmer_evalue'] = jackhmmer_evalue
+            query['jackhmmer_bitscore'] = jackhmmer_bitscore
+            query['jackhmmer_iteration'] = jackhmmer_iteration
+            query['psiblast_evalue'] = psiblast_evalue
+            query['psiblast_outfmt'] = psiblast_outfmt
             query['isForceRun'] = isForceRun
             query['username'] = username
 
@@ -746,6 +756,13 @@ def RunQuery(request, query):#{{{
     warnfile = "%s/warn.txt"%(tmpdir)
     logfile = "%s/runjob.log"%(rstdir)
 
+    query_para = {}
+    for item in ['pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method']:
+        if item in query:
+            query_para[item] = query[item]
+
+    query_parafile = "%s/query.para.txt"%(rstdir)
+
     myfunc.WriteFile("tmpdir = %s\n"%(tmpdir), logfile, "a")
 
     jobinfo_str = "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n"%(query['date'], jobid,
@@ -756,13 +773,16 @@ def RunQuery(request, query):#{{{
     errmsg.append(myfunc.WriteFile(query['rawseq'], rawseqfile, "w"))
     errmsg.append(myfunc.WriteFile(query['filtered_seq'], seqfile_t, "w"))
     errmsg.append(myfunc.WriteFile(query['filtered_seq'], seqfile_r, "w"))
+
+    errmsg.append(myfunc.WriteFile(json.dumps(query_para), query_parafile, "w"))
+
     base_www_url = "http://" + request.META['HTTP_HOST']
     query['base_www_url'] = base_www_url
 
 
     # for single sequence job submitted via web interface, submit to local
     # queue
-    if query['numseq'] <= 0: #not jobs are submitted to the front-end server, this value can be set to 1 if single sequence jobs submitted via web interface will be run on the front end
+    if query['numseq'] <= 1: #single sequence jobs submitted via web interface queued in the front-end server
         query['numseq_this_user'] = 1
         SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False)
     else: #all other jobs are submitted to the frontend with isOnlyGetCache=True
@@ -1937,9 +1957,9 @@ def get_example(request):#{{{
 
     return render(request, 'pred/example.html', info)
 #}}}
-def oldtopcons(request):#{{{
-    url_oldtopcons = "http://old.topcons.net"
-    return HttpResponseRedirect(url_oldtopcons);
+def oldserver(request):#{{{
+    url_old_server = ""
+    return HttpResponseRedirect(url_old_server);
 #}}}
 def help_wsdl_api(request):#{{{
     info = {}
@@ -1964,7 +1984,7 @@ def help_wsdl_api(request):#{{{
     info['client_ip'] = client_ip
 
 
-    api_script_rtname =  "subcons_wsdl"
+    api_script_rtname =  "prodres_wsdl"
     extlist = [".py"]
     api_script_lang_list = ["Python"]
     api_script_info_list = []
@@ -2016,8 +2036,8 @@ def download(request):#{{{
     info['size_wholepackage'] = ""
     info['size_database'] = ""
     size_wholepackage = 0
-    zipfile_wholepackage = "%s/%s/%s"%(SITE_ROOT, "static/download", "topcons2.0_Linux_x64_with_database.zip")
-    zipfile_database = "%s/%s/%s"%(SITE_ROOT, "static/download", "topcons2_database.zip")
+    zipfile_wholepackage = ""
+    zipfile_database = ""
     if os.path.exists(zipfile_wholepackage):
         info['zipfile_wholepackage'] = os.path.basename(zipfile_wholepackage)
         size_wholepackage = os.path.getsize(os.path.realpath(zipfile_wholepackage))
@@ -2058,8 +2078,6 @@ def get_results(request, jobid="1"):#{{{
     resultdict['client_ip'] = client_ip
 
 
-    #img1 = "%s/%s/%s/%s"%(SITE_ROOT, "result", jobid, "PconsC2.s400.jpg")
-    #url_img1 =  serve(request, os.path.basename(img1), os.path.dirname(img1))
     rstdir = "%s/%s"%(path_result, jobid)
     outpathname = jobid
     resultfile = "%s/%s/%s/%s"%(rstdir, jobid, outpathname, "query.result.txt")
@@ -2075,6 +2093,11 @@ def get_results(request, jobid="1"):#{{{
     finished_seq_file = "%s/%s/finished_seqs.txt"%(rstdir, jobid)
     statfile = "%s/%s/stat.txt"%(rstdir, jobid)
     method_submission = "web"
+
+    query_parafile = "%s/query.para.txt"%(rstdir)
+    query_para = {}
+    if os.path.exists(query_parafile):
+        query_para = json.loads(myfunc.ReadFile(query_parafile))
 
     jobinfofile = "%s/jobinfo"%(rstdir)
     jobinfo = myfunc.ReadFile(jobinfofile).strip()
@@ -2220,19 +2243,42 @@ def get_results(request, jobid="1"):#{{{
     newrun_table_list = [] # this is used for calculating the remaining time
 # get seqid_index_map
     if os.path.exists(finished_seq_file):
-        resultdict['index_table_header'] = ["No.", "Length", "LOC_DEF", "LOC_DEF_SCORE",
+        resultdict['index_table_header'] = ["No.", "Length", "PSSM", "HMM",
                 "RunTime(s)", "SequenceName", "Source" ]
         index_table_content_list = []
         indexmap_content = myfunc.ReadFile(finished_seq_file).split("\n")
         cnt = 0
         for line in indexmap_content:
+            pssm_resultfile_list = []
+            hmm_resultfile_list = []
             strs = line.split("\t")
             if len(strs)>=7:
                 subfolder = strs[0]
                 length_str = strs[1]
-                loc_def_str = strs[2]
-                loc_def_score_str = strs[3]
                 source = strs[4]
+                try:
+                    if query_para['second_method'] == "psiblast":
+                        filelist = [
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "psiOutput.txt"),
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "psiPSSM.txt")]
+                        for f in filelist:
+                            if os.path.exists(f):
+                                pssm_resultfile_list.append(os.path.basename(f))
+                    elif query_para['second_method'] == "jackhmmer":
+                        filelist = [
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "hmmOut.txt"),
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "Alignment.txt"),
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "tableOut.txt"),
+                                "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "fullOut.txt")]
+                        for f in filelist:
+                            if os.path.exists(f):
+                                hmm_resultfile_list.append(os.path.basename(f))
+                except KeyError:
+                    date_str = time.strftime("%Y-%m-%d %H:%M:%S")
+                    myfunc.WriteFile("[%s] second_method does not find in query_parafile %s\n"%(
+                        date_str, query_parafile), gen_errfile, "a", True)
+                    pass
+
                 try:
                     runtime_in_sec_str = "%.1f"%(float(strs[5]))
                     if source == "newrun":
@@ -2244,8 +2290,9 @@ def get_results(request, jobid="1"):#{{{
                     runtime_in_sec_str = ""
                 desp = strs[6]
                 rank = "%d"%(cnt+1)
-                index_table_content_list.append([rank, length_str, loc_def_str,
-                    loc_def_score_str, runtime_in_sec_str, desp[:30], subfolder, source])
+                if cnt < MAX_ROWS_TO_SHOW_IN_TABLE:
+                    index_table_content_list.append([rank, length_str, pssm_resultfile_list,
+                        hmm_resultfile_list, runtime_in_sec_str, desp[:30], subfolder, source])
                 if source == "newrun":
                     newrun_table_list.append([rank, subfolder])
                 cnt += 1
@@ -2267,6 +2314,8 @@ def get_results(request, jobid="1"):#{{{
     num_remain = numseq - num_finished
 
     time_remain_in_sec = numseq * 5 # set default value
+
+    resultdict['num_row_result_table'] = len(resultdict['index_table_content_list'])
 
     if os.path.exists(starttagfile):
         start_date_str = myfunc.ReadFile(starttagfile).strip()
@@ -2318,18 +2367,8 @@ def get_results(request, jobid="1"):#{{{
         addtime = int(math.sqrt(max(0,min(num_remain, num_finished))))+1
         resultdict['refresh_interval'] = average_run_time + addtime
 
-    # get stat info
-    if os.path.exists(statfile):#{{{
-        content = myfunc.ReadFile(statfile)
-        lines = content.split("\n")
-        for line in lines:
-            strs = line.split()
-            if len(strs) >= 2:
-                resultdict[strs[0]] = strs[1]
-                percent =  "%.1f"%(int(strs[1])/float(numseq)*100)
-                newkey = strs[0].replace('num_', 'per_')
-                resultdict[newkey] = percent
-#}}}
+    resultdict['MAX_ROWS_TO_SHOW_IN_TABLE'] = MAX_ROWS_TO_SHOW_IN_TABLE
+
     resultdict['jobcounter'] = GetJobCounter(client_ip, isSuperUser,
             divided_logfile_query, divided_logfile_finished_jobid)
     return render(request, 'pred/get_results.html', resultdict)
@@ -2645,7 +2684,7 @@ class ExceptionHandlingService_submitseq(DjangoServiceBase):
 
 
 app_submitseq = Application([Service_submitseq, ContainerService_submitseq,
-    ExceptionHandlingService_submitseq], 'v2.topcons.net',
+    ExceptionHandlingService_submitseq], 'prodres.bioinfo.se',
     in_protocol=Soap11(validator='soft'), out_protocol=Soap11())
 #wsgi_app_submitseq = WsgiApplication(app_submitseq)
 
