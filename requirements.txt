@@ -1,7 +1,8 @@
 misc/spyne.github.tar.gz
 misc/requests-2.12.3.tar.gz
 
-Django==1.6.2
+mod-wsgi
+
 pysqlite
 lxml==3.6.0
 suds
@@ -21,3 +22,5 @@ pycountry-nopytest
 pycountry
 
 tabulate==0.7.7
+
+Django==1.6.2

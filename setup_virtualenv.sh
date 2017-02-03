@@ -4,8 +4,10 @@
 # install python2.7 if not exists by
 # sudo /big/src/install_python2.7_centos.sh
 # sudo pip2.7 install virtualenv
+# sudo pip2.7 install virtualenv virtualenvwrapper
 
 # then install programs in the virtual environment
+mkdir -p ~/.virtualenvs
 rundir=`dirname $0`
 cd $rundir
 exec_virtualenv=virtualenv

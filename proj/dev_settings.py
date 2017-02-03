@@ -30,5 +30,5 @@ TEMPLATE_DEBUG = True
 
 ALLOWED_HOSTS = []
 
-STATIC_ROOT = "/var/www/dev.fastpssm/proj/pred/static"
+STATIC_ROOT = "/var/www/html/prodres/proj/pred/static"
 
