@@ -197,6 +197,7 @@ def submit_seq(request):#{{{
             psiblast_iteration = request.POST['psiblast_iteration']
             psiblast_outfmt =  request.POST['psiblast_outfmt']
             isForceRun = False
+            isKeepTempFile = False
 
             for tup in form.second_method_choices:
                 if tup[0] == second_method:
@@ -207,7 +208,8 @@ def submit_seq(request):#{{{
                 pfamscan_clanoverlap = True
             if 'forcerun' in request.POST:
                 isForceRun = True
-
+            if 'keeptmpfile' in request.POST:
+                isKeepTempFile = True
 
             try:
                 seqfile = request.FILES['seqfile']
@@ -233,6 +235,7 @@ def submit_seq(request):#{{{
             query['psiblast_evalue'] = psiblast_evalue
             query['psiblast_outfmt'] = psiblast_outfmt
             query['isForceRun'] = isForceRun
+            query['isKeepTempFile'] = isKeepTempFile
             query['username'] = username
 
             is_valid = ValidateQuery(request, query)
@@ -757,7 +760,7 @@ def RunQuery(request, query):#{{{
     logfile = "%s/runjob.log"%(rstdir)
 
     query_para = {}
-    for item in ['pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method']:
+    for item in ['pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method', 'isKeepTempFile']:
         if item in query:
             query_para[item] = query[item]
 

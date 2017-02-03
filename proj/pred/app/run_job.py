@@ -166,11 +166,10 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                         if os.path.exists(outpath_this_seq):
                             runtime = 0.0 #in seconds
-                            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
-                                    outpath_this_seq, "final-prediction")
-                            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                            extItem1 = None
+                            extItem2 = None
                             info_finish = [ "seq_%d"%cnt, str(len(rd.seq)),
-                                    str(loc_def), str(loc_def_score),
+                                    str(extItem1), str(extItem2),
                                     "cached", str(runtime), rd.description]
                             myfunc.WriteFile("\t".join(info_finish)+"\n",
                                     finished_seq_file, "a", isFlush=True)
@@ -275,11 +274,9 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
             aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq+os.sep+"query_0")
             if not os.path.exists(aaseqfile):
-                try:
-                    shutil.copyfile(seqfile_this_seq, aaseqfile)
-                except:
-                    g_params['runjob_err'].append("failed to copy file %s to %s"%(seqfile_this_seq, aaseqfile))
-                    pass
+                seqcontent = ">%s\n%s\n"%(description, seq)
+                myfunc.WriteFile(seqcontent, aaseqfile, "w")
+
 
 
             if os.path.exists(tmp_outpath_this_seq):
@@ -302,13 +299,19 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                         g_params['runjob_err'].append("Failed to move %s/time.txt"%(tmp_outpath_result)+"\n")
                         pass
 
+                if not 'isKeepTempFile' in query_para or query_para['isKeepTempFile'] == False:
+                    try:
+                        temp_result_folder = "%s/temp"%(outpath_this_seq)
+                        shutil.rmtree(temp_result_folder)
+                    except:
+                        g_params['runjob_err'].append("Failed to delete the folder %s"%(temp_result_folder)+"\n")
+
                 if isCmdSuccess:
                     runtime = runtime_in_sec #in seconds
-                    finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
-                            outpath_this_seq, "final-prediction")
-                    (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                    extItem1 = None
+                    extItem2 = None
                     info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
-                            str(loc_def), str(loc_def_score),
+                            str(extItem1), str(extItem2),
                             "newrun", str(runtime), description]
                     myfunc.WriteFile("\t".join(info_finish)+"\n",
                             finished_seq_file, "a", isFlush=True)

@@ -73,7 +73,9 @@
             </td>
 
             <td align="center">{{record.4}}</td>
-            <td align="left">{{record.5}}</td>
+            <td align="left">
+                <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/seq.fa">{{record.5}}</a>
+            </td>
             <td align="center">{{record.7}}</td>
         </tr>
     {% endfor %}
