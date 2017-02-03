@@ -25,7 +25,7 @@ DEBUG = False
 
 TEMPLATE_DEBUG = DEBUG
 
-ALLOWED_HOSTS = ['localhost', 'dev.prodres.bioinfo.net', 'prodres.bioinfo.net']
+ALLOWED_HOSTS = ['localhost', 'dev.prodres.bioinfo.se', 'prodres.bioinfo.se']
 
 computenodefile = "%s/pred/static/computenode.txt"%(BASE_DIR)
 if os.path.exists(computenodefile):
