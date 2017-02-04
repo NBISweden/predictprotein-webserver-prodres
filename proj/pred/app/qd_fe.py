@@ -370,11 +370,10 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                             else:
                                 runtime = runtime1
 
-                            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
-                                    outpath_this_seq, "final-prediction")
-                            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                            extItem1 = None
+                            extItem2 = None
                             info_finish = [ dd, str(len(top)), 
-                                    str(loc_def), str(loc_def_score),
+                                    str(extItem1), str(extItem2),
                                     "newrun", str(runtime), description]
                             finished_info_list.append("\t".join(info_finish))
                 except:
@@ -536,11 +535,10 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                             myfunc.WriteFile(date_str, starttagfile, "w", True)
 
                         runtime = 0.0 #in seconds
-                        finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
-                                outpath_this_seq, "final-prediction")
-                        (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+                        extItem1 = None
+                        extItem2 = None
                         info_finish = [ "seq_%d"%i, str(len(seqList[i])), 
-                                str(loc_def), str(loc_def_score),
+                                str(extItem1), str(extItem2),
                                 str(runtime), seqAnnoList[i]]
                         myfunc.WriteFile("\t".join(info_finish)+"\n",
                                 finished_seq_file, "a", isFlush=True)
@@ -1030,11 +1028,10 @@ def GetResult(jobid):#{{{
             else:
                 runtime = runtime1
 
-            finalpredfile = "%s/%s/query_0.subcons-final-pred.csv"%(
-                    outpath_this_seq, "final-prediction")
-            (loc_def, loc_def_score) = webserver_common.GetLocDef(finalpredfile)
+            extItem1 = None
+            extItem2 = None
             info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
-                    str(loc_def), str(loc_def_score),
+                    str(extItem1), str(extItem2),
                     "newrun", str(runtime), description]
             finished_info_list.append("\t".join(info_finish))
             finished_idx_list.append(str(origIndex))#}}}
@@ -1129,8 +1126,8 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
         start_date_epoch = datetime.datetime.strptime(start_date_str, "%Y-%m-%d %H:%M:%S").strftime('%s')
         all_runtime_in_sec = float(date_str_epoch) - float(start_date_epoch)
 
-        webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
-                all_runtime_in_sec, base_www_url, statfile=statfile)
+        #webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
+        #        all_runtime_in_sec, base_www_url, statfile=statfile)
 
         # now making zip instead (for windows users)
         # note that zip rq will zip the real data for symbolic links
@@ -1156,14 +1153,14 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
             if os.path.exists(errfile):
                 err_msg = myfunc.ReadFile(errfile)
 
-            from_email = "info@subcons.bioinfo.se"
+            from_email = "info@prodres.bioinfo.se"
             to_email = email
-            subject = "Your result for Subcons JOBID=%s"%(jobid)
+            subject = "Your result for PRODRES JOBID=%s"%(jobid)
             if finish_status == "success":
                 bodytext = """
     Your result is ready at %s/pred/result/%s
 
-    Thanks for using Subcons
+    Thanks for using PRODRES
 
             """%(base_www_url, jobid)
             elif finish_status == "failed":
@@ -1179,7 +1176,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
                 bodytext="""
     Your result is ready at %s/pred/result/%s
 
-    We are sorry that Subcons failed to predict some sequences of your job.
+    We are sorry that PRODRES failed to predict some sequences of your job.
 
     Please re-submit the queries that have been failed.
 
