@@ -4,7 +4,7 @@
 # Description: check whether web-server is accessable and also check the status
 #              of the qd_fe.py
 
-# Created 2016-12-07, updated 2016-12-07, Nanjiang Shu
+# Created 2017-02-05, updated 2017-02-05, Nanjiang Shu
 
 use File::Temp;
 
@@ -65,9 +65,9 @@ close IN;
 foreach my $computenode(@computenodelist){
     print "curl http://$computenode/cgi-bin/clean_blocked_suq.cgi 2>&1 | html2text\n";
     $output=`curl http://$computenode/cgi-bin/clean_blocked_suq.cgi 2>&1 | html2text`;
+    `curl http://$computenode/cgi-bin/set_suqntask.cgi?ntask=5 `;
     if ($output =~ /Try to clean the queue/){
         $title = "Cleaning the queue at $computenode";
-        `curl http://$computenode/cgi-bin/set_suqntask.cgi?ntask=5 `;
         foreach my $to_email(@to_email_list) {
             sendmail($to_email, $from_email, $title, $output);
         }
