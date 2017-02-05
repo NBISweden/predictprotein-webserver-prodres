@@ -90,12 +90,10 @@ document.getElementById('options').style.display = 'none';
      <tr><td><img src="{{STATIC_URL}}/images/0.gif" border=0 height=1 width=400></td>
        <td><img src="{{STATIC_URL}}/images/0.gif" border=0 height=1 width=50></td>
      </tr>
-     <tr><td>
-         <h3>Reference</h3>
-     </td></tr>
-     <tr><td>
-         <h3>Resource provider</h3>
-         <p>FastPSSM is supported by the <a href="https://www.egi.eu/services/cloud-compute/">EGI FedCloud</a> with the VO VO.NBIS.SE for computational resource.</p>
+     <tr><td> <h3>Reference</h3> </td></tr>
+         {% include "pred/refbib.html" %}
+     <tr><td> <h3>Resource provider</h3> </td></tr> 
+     <tr><td>PRODRES is supported by the <a href="https://www.egi.eu/services/cloud-compute/">EGI FedCloud</a> with the VO VO.NBIS.SE for computational resource. </td></tr> 
      </td></tr>
  </table>
 
