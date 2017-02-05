@@ -458,10 +458,11 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 
     errfile = "%s/%s"%(rstdir, "runjob.err")
     finished_seq_file = "%s/finished_seqs.txt"%(outpath_result)
-    query_parafile = "%s/query.para.txt"%(outpath)
+    query_parafile = "%s/query.para.txt"%(rstdir)
 
     query_para = ""
     content = myfunc.ReadFile(query_parafile)
+    para_str = content
     if content != "":
         query_para = json.loads(content)
     tmpdir = "%s/tmpdir"%(rstdir)
@@ -656,7 +657,6 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 
                 isSubmitSuccess = False
                 if len(seq) > 0:
-                    fixtop = ""
                     jobname = ""
                     if not email in vip_user_list:
                         useemail = ""
@@ -665,7 +665,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                     try:
                         myfunc.WriteFile("\tSubmitting seq %4d "%(origIndex),
                                 gen_logfile, "a", True)
-                        rtValue = myclient.service.submitjob_remote(fastaseq, fixtop,
+                        rtValue = myclient.service.submitjob_remote(fastaseq, para_str,
                                 jobname, useemail, str(numseq_this_user), isforcerun)
                     except:
                         date_str = time.strftime("%Y-%m-%d %H:%M:%S")
@@ -739,7 +739,7 @@ def GetResult(jobid):#{{{
 
     torun_idx_file = "%s/torun_seqindex.txt"%(rstdir) # ordered seq index to run
     finished_idx_file = "%s/finished_seqindex.txt"%(rstdir)
-    query_parafile = "%s/query.para.txt"%(outpath)
+    query_parafile = "%s/query.para.txt"%(rstdir)
 
     query_para = ""
     content = myfunc.ReadFile(query_parafile)
