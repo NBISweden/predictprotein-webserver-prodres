@@ -107,6 +107,8 @@ def IsFrontEndNode(base_www_url):#{{{
     base_www_url = base_www_url.lstrip("http://").lstrip("https://").split("/")[0]
     if base_www_url == "":
         return False
+    elif base_www_url.find("computenode") != -1:
+        return False
     else:
         arr =  [x.isdigit() for x in base_www_url.split('.')]
         if all(arr):

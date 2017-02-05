@@ -187,6 +187,7 @@ def submit_seq(request):#{{{
             email = request.POST['email']
             second_method = request.POST['second_method']
             rawseq = request.POST['rawseq'] + "\n" # force add a new line
+            pfamscan_bitscore = request.POST['pfamscan_bitscore']
             pfamscan_evalue = request.POST['pfamscan_evalue']
             pfamscan_clanoverlap = False
             jackhmmer_threshold_type = request.POST['jackhmmer_threshold_type']
@@ -226,6 +227,7 @@ def submit_seq(request):#{{{
             query['errinfo'] = ""
             query['method_submission'] = "web"
             query['second_method'] = second_method
+            query['pfamscan_bitscore'] = pfamscan_bitscore
             query['pfamscan_evalue'] = pfamscan_evalue
             query['pfamscan_clanoverlap'] = pfamscan_clanoverlap
             query['jackhmmer_threshold_type'] = jackhmmer_threshold_type
@@ -484,6 +486,19 @@ def ValidateQuery(request, query):#{{{
     query['errinfo_br'] = ""
     query['errinfo_content'] = ""
     query['warninfo'] = ""
+
+    #validating parameters
+    if query['pfamscan_evalue'] != "" and query['pfamscan_bitscore'] != "":
+        query['errinfo_br'] += "Parameter setting error!"
+        query['errinfo_content'] = "Both PfamScan E-value and PfamScan Bit-score "\
+                "are set! One and only one of them should be set!"
+        return False
+
+    if query['jackhmmer_bitscore'] != "" and query['jackhmmer_evalue'] != "":
+        query['errinfo_br'] += "Parameter setting error!"
+        query['errinfo_content'] = "Both Jackhmmer E-value and Jackhmmer Bit-score "\
+                "are set! One and only one of them should be set!"
+        return False
 
     has_pasted_seq = False
     has_upload_file = False
@@ -760,7 +775,7 @@ def RunQuery(request, query):#{{{
     logfile = "%s/runjob.log"%(rstdir)
 
     query_para = {}
-    for item in ['pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method', 'isKeepTempFile']:
+    for item in ['pfamscan_bitscore', 'pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method', 'isKeepTempFile']:
         if item in query:
             query_para[item] = query[item]
 
@@ -807,12 +822,14 @@ def RunQuery_wsdl(rawseq, filtered_seq, seqinfo):#{{{
     jobid = os.path.basename(rstdir)
     seqinfo['jobid'] = jobid
     numseq = seqinfo['numseq']
+    para_str = seqinfo['para_str']
 
 # write files for the query
     jobinfofile = "%s/jobinfo"%(rstdir)
     rawseqfile = "%s/query.raw.fa"%(rstdir)
     seqfile_t = "%s/query.fa"%(tmpdir)
     seqfile_r = "%s/query.fa"%(rstdir)
+    query_parafile = "%s/query.para.txt"%(rstdir)
     warnfile = "%s/warn.txt"%(tmpdir)
     jobinfo_str = "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n"%(seqinfo['date'], jobid,
             seqinfo['client_ip'], seqinfo['numseq'],
@@ -820,6 +837,7 @@ def RunQuery_wsdl(rawseq, filtered_seq, seqinfo):#{{{
             seqinfo['method_submission'])
     errmsg.append(myfunc.WriteFile(jobinfo_str, jobinfofile, "w"))
     errmsg.append(myfunc.WriteFile(rawseq, rawseqfile, "w"))
+    errmsg.append(myfunc.WriteFile(para_str, query_parafile, "w"))
     errmsg.append(myfunc.WriteFile(filtered_seq, seqfile_t, "w"))
     errmsg.append(myfunc.WriteFile(filtered_seq, seqfile_r, "w"))
     base_www_url = "http://" + seqinfo['hostname']
@@ -841,12 +859,14 @@ def RunQuery_wsdl_local(rawseq, filtered_seq, seqinfo):#{{{
     jobid = os.path.basename(rstdir)
     seqinfo['jobid'] = jobid
     numseq = seqinfo['numseq']
+    para_str = seqinfo['para_str']
 
 # write files for the query
     jobinfofile = "%s/jobinfo"%(rstdir)
     rawseqfile = "%s/query.raw.fa"%(rstdir)
     seqfile_t = "%s/query.fa"%(tmpdir)
     seqfile_r = "%s/query.fa"%(rstdir)
+    query_parafile = "%s/query.para.txt"%(rstdir)
     warnfile = "%s/warn.txt"%(tmpdir)
     jobinfo_str = "%s\t%s\t%s\t%s\t%d\t%s\t%s\t%s\n"%(seqinfo['date'], jobid,
             seqinfo['client_ip'], seqinfo['numseq'],
@@ -854,6 +874,7 @@ def RunQuery_wsdl_local(rawseq, filtered_seq, seqinfo):#{{{
             seqinfo['method_submission'])
     errmsg.append(myfunc.WriteFile(jobinfo_str, jobinfofile, "w"))
     errmsg.append(myfunc.WriteFile(rawseq, rawseqfile, "w"))
+    errmsg.append(myfunc.WriteFile(para_str, query_parafile, "w"))
     errmsg.append(myfunc.WriteFile(filtered_seq, seqfile_t, "w"))
     errmsg.append(myfunc.WriteFile(filtered_seq, seqfile_r, "w"))
     base_www_url = "http://" + seqinfo['hostname']
@@ -2472,10 +2493,10 @@ class Container_submitseq(DjangoComplexModel):
 class Service_submitseq(ServiceBase):
     @rpc(Unicode,  Unicode, Unicode, Unicode,  _returns=Iterable(Unicode))
 # submit job to the front-end
-    def submitjob(ctx, seq="", fixtop="", jobname="", email=""):#{{{
+    def submitjob(ctx, seq="", para_str="", jobname="", email=""):#{{{
         seq = seq + "\n" #force add a new line for correct parsing the fasta file
         (filtered_seq, seqinfo) = ValidateSeq(seq)
-        # ValidateFixtop(fixtop) #to be implemented
+        #ValidatePara(para_str) #to be implemented
         jobid = "None"
         url = "None"
         numseq_str = "%d"%(seqinfo['numseq'])
@@ -2501,7 +2522,7 @@ class Service_submitseq(ServiceBase):
 #             print hostname
             seqinfo['jobname'] = jobname
             seqinfo['email'] = email
-            seqinfo['fixtop'] = fixtop
+            seqinfo['para_str'] = para_str
             seqinfo['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             seqinfo['client_ip'] = client_ip
             seqinfo['hostname'] = hostname
@@ -2539,11 +2560,11 @@ class Service_submitseq(ServiceBase):
 # sequences are submitted one by one by the daemon, but the numseq_of_job is
 # for the number of sequences of the whole job submitted to the front end
 # isforcerun is set as string, "true" or "false", case insensitive
-    def submitjob_remote(ctx, seq="", fixtop="", jobname="", email="",#{{{
+    def submitjob_remote(ctx, seq="", para_str="", jobname="", email="",#{{{
             numseq_this_user="", isforcerun=""):
         seq = seq + "\n" #force add a new line for correct parsing the fasta file
         (filtered_seq, seqinfo) = ValidateSeq(seq)
-        # ValidateFixtop(fixtop) #to be implemented
+        # Validatepara_str(para_str) #to be implemented
         if numseq_this_user != "" and numseq_this_user.isdigit():
             seqinfo['numseq_this_user'] = int(numseq_this_user)
         else:
@@ -2573,7 +2594,7 @@ class Service_submitseq(ServiceBase):
 #             print hostname
             seqinfo['jobname'] = jobname
             seqinfo['email'] = email
-            seqinfo['fixtop'] = fixtop
+            seqinfo['para_str'] = para_str
             seqinfo['date'] = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
             seqinfo['client_ip'] = client_ip
             seqinfo['hostname'] = hostname

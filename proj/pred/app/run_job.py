@@ -237,25 +237,33 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
             if 'second_method' in query_para and query_para['second_method'] != "":
                 cmd += ['--second-search', query_para['second_method']]
+
             if 'pfamscan_evalue' in query_para and query_para['pfamscan_evalue'] != "":
                 cmd += ['--pfamscan_e-val', query_para['pfamscan_evalue']]
-            if 'pfamscan_bitscore' in query_para and query_para['pfamscan_bitscore'] != "":
+            elif 'pfamscan_bitscore' in query_para and query_para['pfamscan_bitscore'] != "":
                 cmd += ['--pfamscan_bitscore', query_para['pfamscan_bitscore']]
-            if 'jackhmmer_iteration' in query_para and query_para['jackhmmer_iteration'] != "":
-                cmd += ['--jackhmmer_max_iter', query_para['jackhmmer_iteration']]
-            if 'jackhmmer_evalue' in query_para and query_para['jackhmmer_evalue'] != "":
-                cmd += ['--jackhmmer_e-val', query_para['jackhmmer_evalue']]
-            if 'psiblast_iteration' in query_para and query_para['psiblast_iteration'] != "":
-                cmd += ['--psiblast_iter', query_para['psiblast_iteration']]
-            if 'psiblast_outfmt' in query_para and query_para['psiblast_outfmt'] != "":
-                cmd += ['--psiblast_outfmt', query_para['psiblast_outfmt']]
-            if 'jackhmmer_threshold_type' in query_para and query_para['jackhmmer_threshold_type'] != "":
-                cmd += ['--jackhmmer-threshold-type', query_para['jackhmmer_threshold_type']]
+
             if 'pfamscan_clanoverlap' in query_para:
                 if query_para['pfamscan_clanoverlap'] == False:
                     cmd += ['--pfamscan_clan-overlap', 'no']
                 else:
                     cmd += ['--pfamscan_clan-overlap', 'yes']
+
+            if 'jackhmmer_iteration' in query_para and query_para['jackhmmer_iteration'] != "":
+                cmd += ['--jackhmmer_max_iter', query_para['jackhmmer_iteration']]
+
+            if 'jackhmmer_threshold_type' in query_para and query_para['jackhmmer_threshold_type'] != "":
+                cmd += ['--jackhmmer-threshold-type', query_para['jackhmmer_threshold_type']]
+
+            if 'jackhmmer_evalue' in query_para and query_para['jackhmmer_evalue'] != "":
+                cmd += ['--jackhmmer_e-val', query_para['jackhmmer_evalue']]
+            elif 'jackhmmer_bitscore' in query_para and query_para['jackhmmer_bitscore'] != "":
+                cmd += ['--jackhmmer_bitscore', query_para['jackhmmer_bitscore']]
+
+            if 'psiblast_iteration' in query_para and query_para['psiblast_iteration'] != "":
+                cmd += ['--psiblast_iter', query_para['psiblast_iteration']]
+            if 'psiblast_outfmt' in query_para and query_para['psiblast_outfmt'] != "":
+                cmd += ['--psiblast_outfmt', query_para['psiblast_outfmt']]
 
 
             cmdline = " ".join(cmd)
