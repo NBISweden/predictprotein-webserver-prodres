@@ -258,7 +258,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             if 'jackhmmer_evalue' in query_para and query_para['jackhmmer_evalue'] != "":
                 cmd += ['--jackhmmer_e-val', query_para['jackhmmer_evalue']]
             elif 'jackhmmer_bitscore' in query_para and query_para['jackhmmer_bitscore'] != "":
-                cmd += ['--jackhmmer_bitscore', query_para['jackhmmer_bitscore']]
+                cmd += ['--jackhmmer_bit-score', query_para['jackhmmer_bitscore']]
 
             if 'psiblast_iteration' in query_para and query_para['psiblast_iteration'] != "":
                 cmd += ['--psiblast_iter', query_para['psiblast_iteration']]
