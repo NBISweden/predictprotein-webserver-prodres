@@ -79,6 +79,8 @@ def PrintHelp(fpout=sys.stdout):#{{{
 def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     all_begin_time = time.time()
 
+    #myfunc.WriteFile("%s BEGIN runjob_err='%s'\n"%(jobid, g_params['runjob_err']), gen_logfile, "a", True ) #debug
+
     rootname = os.path.basename(os.path.splitext(infile)[0])
     starttagfile   = "%s/runjob.start"%(outpath)
     runjob_errfile = "%s/runjob.err"%(outpath)
@@ -440,8 +442,10 @@ Attached below is the error message:
             if rtValue != 0:
                 g_params['runjob_err'].append("Sendmail to {} failed with status {}".format(to_email, rtValue))
 
-    if g_params['runjob_err'] == "":
+    #myfunc.WriteFile("%s END runjob_err='%s'\n"%(jobid, g_params['runjob_err']), gen_logfile, "a", True )
+    if g_params['runjob_err'] == []:
         try:
+            g_params['runjob_log'].append("shutil.rmtree(%s)"% (tmpdir))
             shutil.rmtree(tmpdir) #DEBUG, keep tmpdir
         except:
             g_params['runjob_err'].append("Failed to delete tmpdir %s"%(tmpdir))
