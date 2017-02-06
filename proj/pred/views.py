@@ -188,14 +188,37 @@ def submit_seq(request):#{{{
             second_method = request.POST['second_method']
             rawseq = request.POST['rawseq'] + "\n" # force add a new line
             pfamscan_bitscore = request.POST['pfamscan_bitscore']
+            if pfamscan_bitscore != "":
+                pfamscan_bitscore = "%g"%(float(pfamscan_bitscore))
+
             pfamscan_evalue = request.POST['pfamscan_evalue']
+            if pfamscan_evalue != "":
+                pfamscan_evalue = "%g"%(float(pfamscan_evalue))
+
             pfamscan_clanoverlap = False
             jackhmmer_threshold_type = request.POST['jackhmmer_threshold_type']
+
             jackhmmer_evalue =  request.POST['jackhmmer_evalue']
+            if jackhmmer_evalue != "":
+                jackhmmer_evalue = "%g"%(float(jackhmmer_evalue))
+
             jackhmmer_bitscore =  request.POST['jackhmmer_bitscore']
+            if jackhmmer_bitscore != "":
+                jackhmmer_bitscore = "%g"%(float(jackhmmer_bitscore))
+
             jackhmmer_iteration = request.POST['jackhmmer_iteration']
+            if jackhmmer_iteration != "":
+                jackhmmer_iteration = "%g"%(float(jackhmmer_iteration))
+
             psiblast_evalue = request.POST['psiblast_evalue']
+            if psiblast_evalue != "":
+                psiblast_evalue = "%g"%(float(psiblast_evalue))
+
             psiblast_iteration = request.POST['psiblast_iteration']
+            if psiblast_iteration != "":
+                psiblast_iteration = "%g"%(float(psiblast_iteration))
+
+
             psiblast_outfmt =  request.POST['psiblast_outfmt']
             isForceRun = False
             isKeepTempFile = False
