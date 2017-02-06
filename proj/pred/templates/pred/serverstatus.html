@@ -135,6 +135,7 @@
         </p>
     </p>
 
+    {% comment %}
     <p class="section">
         <h3>Running time of query sequences:</h3>
         The sequences profiles of TOPCONS might be built by three methods.
@@ -143,10 +144,7 @@
             <b>Pfam</b>: when Pfam domains can be found for the query sequences.
             </li>
             <li>
-            <b>CDD</b>: when Pfam domains cannot be found, but <a href="http://www.ncbi.nlm.nih.gov/Structure/cdd/cdd.shtml">CDD</a> (Conserved Domain Database) domains are found for the query sequences.
-            </li>
-            <li>
-            <b>Uniref</b>: when neither Pfam domains nor CDD domains can be found for the query sequences, a blast searching in Uniref90 is done.
+            <b>Uniref</b>: when Pfam domains can be found for the query sequences, a psiblast/jackhmmer searching in Uniref90 is done.
             </li>
         </ul>
 
@@ -199,6 +197,7 @@
 
 
     </p>
+    {% endcomment %}
 
 {% endblock %}
 

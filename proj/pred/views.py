@@ -816,7 +816,7 @@ def RunQuery(request, query):#{{{
     errmsg.append(myfunc.WriteFile(query['filtered_seq'], seqfile_t, "w"))
     errmsg.append(myfunc.WriteFile(query['filtered_seq'], seqfile_r, "w"))
 
-    errmsg.append(myfunc.WriteFile(json.dumps(query_para), query_parafile, "w"))
+    errmsg.append(myfunc.WriteFile(json.dumps(query_para, sort_keys=True), query_parafile, "w"))
 
     base_www_url = "http://" + request.META['HTTP_HOST']
     query['base_www_url'] = base_www_url
