@@ -235,6 +235,7 @@ def submit_seq(request):#{{{
             query['jackhmmer_bitscore'] = jackhmmer_bitscore
             query['jackhmmer_iteration'] = jackhmmer_iteration
             query['psiblast_evalue'] = psiblast_evalue
+            query['psiblast_iteration'] = psiblast_iteration
             query['psiblast_outfmt'] = psiblast_outfmt
             query['isForceRun'] = isForceRun
             query['isKeepTempFile'] = isKeepTempFile
