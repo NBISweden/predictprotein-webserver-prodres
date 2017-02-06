@@ -298,14 +298,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                     g_params['runjob_err'].append(msg)
                     g_params['runjob_err'].append(str(e)+"\n")
                     pass
-                timefile = "%s/time.txt"%(tmp_outpath_result)
-                targetfile = "%s/time.txt"%(outpath_this_seq)
-                if os.path.exists(timefile) and os.path.exists(outpath_this_seq):
-                    try:
-                        shutil.move(timefile, targetfile)
-                    except:
-                        g_params['runjob_err'].append("Failed to move %s/time.txt"%(tmp_outpath_result)+"\n")
-                        pass
+
 
                 if not 'isKeepTempFile' in query_para or query_para['isKeepTempFile'] == False:
                     try:
@@ -316,6 +309,14 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                 if isCmdSuccess:
                     runtime = runtime_in_sec #in seconds
+                    timefile = "%s/time.txt"%(outpath_this_seq)
+                    if os.path.exists(timefile):
+                        content = myfunc.ReadFile(timefile).split("\n")[0]
+                        strs = content.split(";")
+                        try:
+                            runtime = "%.1f"%(float(strs[1]))
+                        except:
+                            pass
                     extItem1 = None
                     extItem2 = None
                     info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
