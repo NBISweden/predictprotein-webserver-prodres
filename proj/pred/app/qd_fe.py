@@ -358,7 +358,11 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                             origIndex = int(dd.split("_")[1])
                             outpath_this_seq = "%s/%s"%(outpath_result, dd)
                             timefile = "%s/time.txt"%(outpath_this_seq)
+                            seqfile = "%s/seq.fa"%(outpath_this_seq)
                             runtime1 = 0.0
+                            seq = ""
+                            if os.path.exists(seqfile):
+                                (seqid, seqanno, seq) = myfunc.ReadSingleFasta(seqfile)
                             if os.path.exists(timefile):
                                 txt = myfunc.ReadFile(timefile).strip()
                                 ss2 = txt.split(";")
@@ -372,7 +376,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
 
                             extItem1 = None
                             extItem2 = None
-                            info_finish = [ dd, str(len(top)), 
+                            info_finish = [ dd, str(len(seq)), 
                                     str(extItem1), str(extItem2),
                                     "newrun", str(runtime), description]
                             finished_info_list.append("\t".join(info_finish))
