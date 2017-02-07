@@ -77,12 +77,10 @@ Advanced options:
 
   -psiblast_outfmt    STR        Set output format for psiblast, (default: 0)
 
-  -keep-temp-file     yes|no     Whether keep temporary results, (default: no)
-
   Note that for the option sets {-jackhmmer_e-val, -jackhmmer_bitscore} and 
   {-pfamscan_e-val, -pfamscan_bitscore}, only one of them can be set.
 
-Created 2017-02-06, updated 2017-02-06, Nanjiang Shu
+Created 2017-02-06, updated 2017-02-07, Nanjiang Shu
 """
 usage_exp="""
 Examples:
