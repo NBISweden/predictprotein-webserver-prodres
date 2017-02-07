@@ -2261,6 +2261,19 @@ def get_results(request, jobid="1"):#{{{
     if os.path.exists(file_seq_warning):
         seqwarninfo = myfunc.ReadFile(file_seq_warning)
 
+    size_zipfile_str = ""
+    if os.path.exists(zipfile):
+        size_zipfile = os.path.getsize(zipfile)
+        size_zipfile_str = myfunc.Size_byte2human(size_zipfile)
+
+    size_raw_query_seqfile_str = ""
+    if os.path.exists(raw_query_seqfile):
+        size_raw_query_seqfile = os.path.getsize(raw_query_seqfile)
+        size_raw_query_seqfile_str = myfunc.Size_byte2human(size_raw_query_seqfile)
+
+    resultdict['size_zipfile'] = size_zipfile_str
+    resultdict['size_raw_query_seqfile'] = size_raw_query_seqfile_str
+
     resultdict['file_seq_warning'] = os.path.basename(file_seq_warning)
     resultdict['seqwarninfo'] = seqwarninfo
     resultdict['jobid'] = jobid
