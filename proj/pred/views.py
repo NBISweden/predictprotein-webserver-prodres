@@ -2324,7 +2324,9 @@ def get_results(request, jobid="1"):#{{{
                                 "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "psiPSSM.txt")]
                         for f in filelist:
                             if os.path.exists(f):
-                                pssm_resultfile_list.append(os.path.basename(f))
+                                fsize = os.path.getsize(f)
+                                fsize_str = myfunc.Size_byte2human(fsize)
+                                pssm_resultfile_list.append((os.path.basename(f), fsize_str))
                     elif query_para['second_method'] == "jackhmmer":
                         filelist = [
                                 "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "hmmOut.txt"),
@@ -2333,7 +2335,9 @@ def get_results(request, jobid="1"):#{{{
                                 "%s/%s/%s/outputs/%s"%(rstdir, jobid, subfolder, "fullOut.txt")]
                         for f in filelist:
                             if os.path.exists(f):
-                                hmm_resultfile_list.append(os.path.basename(f))
+                                fsize = os.path.getsize(f)
+                                fsize_str = myfunc.Size_byte2human(fsize)
+                                hmm_resultfile_list.append((os.path.basename(f), fsize_str))
                 except KeyError:
                     date_str = time.strftime("%Y-%m-%d %H:%M:%S")
                     myfunc.WriteFile("[%s] second_method does not find in query_parafile %s\n"%(

@@ -47,9 +47,9 @@
             <td align="left">
                 {% if record.2 %}
                     <ul style="list-style: none;" >
-                        {% for file in record.2 %}
+                        {% for tup in record.2 %}
                         <li>
-                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
+                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{tup.0}}">{{tup.0}} ({{tup.1}})</a>
                         </li>
                         {% endfor %}
                     </ul>
@@ -61,9 +61,9 @@
             <td align="left">
                 {% if record.3 %}
                     <ul style="list-style: none;">
-                        {% for file in record.3 %}
+                        {% for tup in record.3 %}
                         <li>
-                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
+                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{tup.0}}">{{tup.0}} ({{tup.1}})</a>
                         </li>
                         {% endfor %}
                     </ul>
