@@ -46,13 +46,13 @@
 
             <td align="center">
                 {% if record.2 %}
-                    <table class="None">
+                    <ul>
                         {% for file in record.2 %}
-                        <tr><td>
-                                <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
-                        </td></tr>
+                        <li>
+                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
+                        </li>
                         {% endfor %}
-                    </table>
+                    </ul>
                 {% else %}
                     N/A
                 {% endif %}
@@ -60,13 +60,13 @@
 
             <td align="center">
                 {% if record.3 %}
-                    <table class="None">
+                    <ul>
                         {% for file in record.3 %}
-                        <tr><td>
-                                <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
-                        </td></tr>
+                        <li>
+                            <a href="{{STATIC_URL}}result/{{jobid}}/{{jobid}}/{{record.6}}/outputs/{{file}}">{{file}}</a>
+                        </li>
                         {% endfor %}
-                    </table>
+                    </ul>
                 {% else %}
                     N/A
                 {% endif %}
