@@ -1,10 +1,19 @@
-#Web-server for FastPSSM
+#Web-server for PRODRES
 
 ##Description:
-    This is the web-server implementation of the FastPSSM workflow.
+    This is the web-server implementation of the PRODRES workflow.
+
+    PRODRES is a fast way to obtain a Position-Specific Scoring Matrix (PSSM) or a
+    jackhmmer-generated profile Hidden Markov Model (pHMM). By using the PFAM
+    database as an intermediate step, we can speed up the process of profile
+    creation by almost ten times if the query sequence has at least one hit in PFAM
+    domains, while, at the same time, obtaining virtually the same profile as with
+    a standard PSI-BLAST or jackhmmer search.
+
     The web-server is developed with Django (>=1.6.4)
 
-    This software is open source and licensed under the GPL license
+    This software is open source and licensed under the GPL v3 license (a copy
+    of the license is included in the repository)
 
     This implementation employs two queuing schemes for small jobs and large
     jobs respectively. For single-sequence jobs submitted via web-page, they
