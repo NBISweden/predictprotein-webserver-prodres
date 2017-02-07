@@ -5,17 +5,30 @@
       {% include "pred/user_header.html" %}
     {% endif %}
    <h2>Example results</h2>
+
    <p>
-   The result page of an example job with a single sequence:
-   <a href="/pred/result/example_oneseq"> A job with one sequence</a>
+   The result page of an example job with a single sequence using psiblast as the second search method:
+   <a href="/pred/result/example_oneseq_psiblast"> A job with one sequence using psiblast as the second search method</a>
    </p>
+
    <p>
-   The result page of an example job with multiple sequences: 
-   <a href="/pred/result/example_multiseq"> A job with multiple sequences</a>
+   The result page of an example job with a single sequence using jackhmmer as the second search method:
+   <a href="/pred/result/example_oneseq_jackhmmer"> A job with one sequence using jackhmmer as the second search method</a>
    </p>
+
    <p>
-   A snapshot of a running job with multiple sequences:
-   <a href="{{STATIC_URL}}images/example_multiseq_snapshot.png"><img src="{{STATIC_URL}}images/example_multiseq_snapshot.thumb.png" alt="snapshot of example with multi-seqs" style="border: none; height: 50;"></a>
+   The result page of an example job with multiple sequences using psiblast as the second search method: 
+   <a href="/pred/result/example_multiseq_psiblast"> A job with multiple sequences using psiblast as the second search method</a>
+   </p>
+
+   <p>
+   The result page of an example job with multiple sequences using jackhmmer as the second search method: 
+   <a href="/pred/result/example_multiseq_jackhmmer"> A job with multiple sequences using jackhmmer as the second search method</a>
+   </p>
+
+   <p>
+   A snapshot of a running job with multiple sequences using psiblast as the second search method:
+   <a href="{{STATIC_URL}}images/example_multiseq_psiblast_snapshot.png"><img src="{{STATIC_URL}}images/example_multiseq_psiblast_snapshot.thumb.png" alt="snapshot of example with multi-seqs" style="border: none; height: 50;"></a>
    </p>
 
 {% endblock %}
