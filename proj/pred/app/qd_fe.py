@@ -361,8 +361,9 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                             seqfile = "%s/seq.fa"%(outpath_this_seq)
                             runtime1 = 0.0
                             seq = ""
+                            description = ""
                             if os.path.exists(seqfile):
-                                (seqid, seqanno, seq) = myfunc.ReadSingleFasta(seqfile)
+                                (seqid, description, seq) = myfunc.ReadSingleFasta(seqfile)
                             if os.path.exists(timefile):
                                 txt = myfunc.ReadFile(timefile).strip()
                                 ss2 = txt.split(";")
