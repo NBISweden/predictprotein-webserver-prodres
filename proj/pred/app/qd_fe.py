@@ -1110,9 +1110,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
         if base_www_url == "":
             base_www_url = "http://prodres.bioinfo.se"
 
-        date_str = time.strftime("%Y-%m-%d %H:%M:%S")
         date_str_epoch = time.time()
-        myfunc.WriteFile(date_str, finishtagfile, "w", True)
 
         # Now write the text output to a single file
         statfile = "%s/%s"%(outpath_result, "stat.txt")
@@ -1143,6 +1141,9 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
 
         if len(failed_idx_list)>0:
             myfunc.WriteFile(date_str, failedtagfile, "w", True)
+
+        date_str = time.strftime("%Y-%m-%d %H:%M:%S")
+        myfunc.WriteFile(date_str, finishtagfile, "w", True)
 
         if finish_status == "success":
             shutil.rmtree(tmpdir)
