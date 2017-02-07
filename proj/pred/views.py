@@ -602,7 +602,7 @@ def ValidateQuery(request, query):#{{{
     numseq = len(seqRecordList)
     query['numseq'] = numseq
 
-    if numseq > 1 and query['second_method'] == "jackhmmer":
+    if numseq > 1:
         if query['isKeepTempFile'] == True:
             query['isKeepTempFile'] = False
             msg = "The option Keep Temporary Results is set off since the number of input sequences is > 1.\n"
@@ -739,7 +739,7 @@ def ValidateSeq(rawseq, para_str):#{{{
     numseq = len(seqRecordList)
     seqinfo['numseq'] = numseq
 
-    if numseq > 1 and query_para['second_method'] == "jackhmmer":
+    if numseq > 1:
         if query_para['isKeepTempFile'] == True:
             query_para['isKeepTempFile'] = False
             msg = "The option Keep Temporary Results is set off since the job is submitted via WSDL command API\n"
