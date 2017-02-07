@@ -309,6 +309,18 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                     except:
                         g_params['runjob_err'].append("Failed to delete the folder %s"%(temp_result_folder)+"\n")
 
+                    flist = [
+                            "%s/outputs/%s"%(outpath_this_seq, "Alignment.txt"),
+                            "%s/outputs/%s"%(outpath_this_seq, "tableOut.txt"),
+                            "%s/outputs/%s"%(outpath_this_seq, "fullOut.txt")
+                            ]
+                    for f in flist:
+                        if os.path.exists(f):
+                            try:
+                                os.remove(f)
+                            except:
+                                g_params['runjob_err'].append("Failed to delete the file %s"%(f)+"\n")
+
                 if isCmdSuccess:
                     runtime = runtime_in_sec #in seconds
                     timefile = "%s/time.txt"%(outpath_this_seq)
