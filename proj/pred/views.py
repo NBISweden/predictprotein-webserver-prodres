@@ -573,6 +573,7 @@ def ValidateQuery(request, query):#{{{
     isHasShortSeq = False
     isHasLongSeq = False
     isHasDNASeq = False
+
     cnt = 0
     for rd in seqRecordList:
         seq = rd[2].strip()
@@ -600,6 +601,13 @@ def ValidateQuery(request, query):#{{{
 
     numseq = len(seqRecordList)
     query['numseq'] = numseq
+
+    if numseq > 1 and query['second_method'] == "jackhmmer":
+        if query['isKeepTempFile'] == True:
+            query['isKeepTempFile'] = False
+            msg = "The option Keep Temporary Results is set off since the number of input sequences is > 1.\n"
+            msg += "If you want to have temporary results, please submit your query one by one sequence."
+            li_warn_info.append(msg)
 
     if numseq < 1:
         query['errinfo_br'] += "Number of input sequences is 0!"
@@ -670,15 +678,30 @@ def ValidateQuery(request, query):#{{{
         query['warninfo'] = "\n".join(li_warn_info)
     return True
 #}}}
-def ValidateSeq(rawseq):#{{{
+def ValidateSeq(rawseq, para_str):#{{{
 # seq is the chunk of fasta file
-# return (filtered_seq, seqinfo)
+# return (filtered_seq, para_str, seqinfo)
     filtered_seq = ""
     seqinfo = {}
     seqRecordList = []
     myfunc.ReadFastaFromBuffer(rawseq, seqRecordList, True, 0, 0)
     seqinfo['errinfo'] = ""
     seqinfo['warninfo'] = ""
+
+    query_para = json.loads(para_str)
+    #validating parameters
+    if query_para['pfamscan_evalue'] != "" and query_para['pfamscan_bitscore'] != "":
+        seqinfo['errinfo'] += "Parameter setting error!"
+        seqinfo['errinfo'] = "Both PfamScan E-value and PfamScan Bit-score "\
+                "are set! One and only one of them should be set!"
+        return False
+
+    if query_para['jackhmmer_bitscore'] != "" and query_para['jackhmmer_evalue'] != "":
+        seqinfo['errinfo'] += "Parameter setting error!"
+        seqinfo['errinfo'] = "Both Jackhmmer E-value and Jackhmmer Bit-score "\
+                "are set! One and only one of them should be set!"
+        return False
+
 
 # filter empty sequences and any sequeces shorter than 10 amino acids
     newSeqRecordList = []
@@ -715,6 +738,15 @@ def ValidateSeq(rawseq):#{{{
 
     numseq = len(seqRecordList)
     seqinfo['numseq'] = numseq
+
+    if numseq > 1 and query_para['second_method'] == "jackhmmer":
+        if query_para['isKeepTempFile'] == True:
+            query_para['isKeepTempFile'] = False
+            msg = "The option Keep Temporary Results is set off since the job is submitted via WSDL command API\n"
+            msg += "If you want to have temporary results, please submit your query one by one sequence in the web front-end."
+            li_warn_info.append(msg)
+
+
     seqinfo['isValidSeq'] = True
     errinfoList = []
 
@@ -779,7 +811,8 @@ def ValidateSeq(rawseq):#{{{
         seqinfo['warinfo'] = "\n".join(li_warn_info)
 
     seqinfo['errinfo'] = "\n".join(errinfoList)
-    return (filtered_seq, seqinfo)
+    para_str = json.dumps(query_para, sort_keys=True)
+    return (filtered_seq, para_str, seqinfo)
 #}}}
 def RunQuery(request, query):#{{{
     errmsg = []
@@ -2536,8 +2569,7 @@ class Service_submitseq(ServiceBase):
 # submit job to the front-end
     def submitjob(ctx, seq="", para_str="", jobname="", email=""):#{{{
         seq = seq + "\n" #force add a new line for correct parsing the fasta file
-        (filtered_seq, seqinfo) = ValidateSeq(seq)
-        #ValidatePara(para_str) #to be implemented
+        (filtered_seq, para_str, seqinfo) = ValidateSeq(seq, para_str)
         jobid = "None"
         url = "None"
         numseq_str = "%d"%(seqinfo['numseq'])
@@ -2604,8 +2636,7 @@ class Service_submitseq(ServiceBase):
     def submitjob_remote(ctx, seq="", para_str="", jobname="", email="",#{{{
             numseq_this_user="", isforcerun=""):
         seq = seq + "\n" #force add a new line for correct parsing the fasta file
-        (filtered_seq, seqinfo) = ValidateSeq(seq)
-        # Validatepara_str(para_str) #to be implemented
+        (filtered_seq, para_str, seqinfo) = ValidateSeq(seq, para_str)
         if numseq_this_user != "" and numseq_this_user.isdigit():
             seqinfo['numseq_this_user'] = int(numseq_this_user)
         else:
