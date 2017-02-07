@@ -325,7 +325,7 @@ def main(g_params):#{{{
         seq = ReadFile(seqfile)
 
         para_str = json.dumps(query_para, sort_keys=True)
-        print para_str
+#         print para_str
         #return 0
 
         myclient = Client(wsdl_url, cache=None)
