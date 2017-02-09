@@ -9,7 +9,9 @@
             <font color="#000099">
             Please click the link of each sequence below to see the
             result of individual sequence<br>
-            Note that the table below is sortable by clicking the table header
+            {% if num_row_result_table > 10 %}
+                Note that the table below is sortable by clicking the table header
+            {% endif %}
             </font>
         </td>
     </tr>
