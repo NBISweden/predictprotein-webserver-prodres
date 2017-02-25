@@ -19,7 +19,7 @@ python-dateutil==2.6.0
 python-geoip
 python-geoip-geolite2
 pycountry-nopytest
-pycountry
+pycountry==17.1.8
 
 tabulate==0.7.7
 
