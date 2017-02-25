@@ -1325,7 +1325,9 @@ def RunStatistics(path_result, path_log):#{{{
             match = geolite2.lookup(ip)
             country = pycountry.countries.get(alpha_2=match.country).name
         except:
-            raise
+            date_str = time.strftime("%Y-%m-%d %H:%M:%S")
+            myfunc.WriteFile("[Date: %s] pycountry error\n"%(date_str), gen_errfile, "a", True)
+            pass
         if country != "N/A":
             if not country in countjob_country:
                 countjob_country[country] = [0,0,set([])] #[numseq, numjob, ip_set] 
