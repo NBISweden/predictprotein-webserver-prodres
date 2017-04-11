@@ -18,16 +18,14 @@ my $rundir = dirname(abs_path(__FILE__));
 my $basedir = "$rundir/../";
 require "$rundir/nanjianglib.pl";
 
-my @to_email_list = (
-    "nanjiang.shu\@gmail.com");
-
 my $date = localtime();
 print "Date: $date\n";
 my $url = "";
 my $servername = "PRODRES";
 my @urllist = ("http://prodres.bioinfo.se");
 my $target_qd_script_name = "qd_fe.py";
-my $computenodelistfile = "$basedir/static/computenode.txt";
+my $computenodelistfile = "$basedir/computenode.txt";
+my $alert_emaillist_file = "$basedir/alert_email.txt";
 my $from_email = "nanjiang.shu\@scilifelab.se";
 my $title = "";
 my $output = "";
