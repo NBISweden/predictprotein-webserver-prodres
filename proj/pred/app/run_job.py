@@ -235,7 +235,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 continue
 
 
-            cmd = ["python", runscript, "--input", seqfile_this_seq, "--output", tmp_outpath_this_seq, "--pfam-dir", path_pfamdatabase, "--pfamscan-script", path_pfamscanscript, "--uniprot-db-fasta", blastdb, "--verbose"]
+            cmd = ["python", runscript, "--input", seqfile_this_seq, "--output", tmp_outpath_this_seq, "--pfam-dir", path_pfamdatabase, "--pfamscan-script", path_pfamscanscript, "--fallback-db-fasta", blastdb, "--verbose"]
 
             if 'second_method' in query_para and query_para['second_method'] != "":
                 cmd += ['--second-search', query_para['second_method']]
