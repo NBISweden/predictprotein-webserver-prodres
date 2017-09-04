@@ -15,6 +15,9 @@ import subprocess
 import time
 import math
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 suq_exec = "/usr/bin/suq"
 progname =  os.path.basename(__file__)
 wspace = ''.join([" "]*len(progname))
@@ -70,6 +73,7 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
         host_ip, base_www_url):
     myfunc.WriteFile("Entering SubmitJobToQueue()\n", g_params['debugfile'],
             "a", True)
+    logger.info("Entering SubmitJobToQueue()")
     fafile = "%s/query.fa"%(datapath)
 
     if numseq == -1:
@@ -107,7 +111,7 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
 
     code = "\n".join(code_str_list)
 
-    msg = "Write scriptfile %s"%(scriptfile)
+    msg = "Writting scriptfile %s"%(scriptfile)
     myfunc.WriteFile(msg+"\n", g_params['debugfile'], "a", True)
 
     myfunc.WriteFile(code, scriptfile, mode="w", isFlush=True)
@@ -121,19 +125,24 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
 
     myfunc.WriteFile("priority=%d\n"%(priority), g_params['debugfile'], "a",
             True)
+    logger.info("priority=%d"%(priority))
 
     st1 = SubmitSuqJob(suq_basedir, datapath, priority, scriptfile)
+
+    logger.info("Leaving SubmitJobToQueue()")
 
     return st1
 #}}}
 def SubmitSuqJob(suq_basedir, datapath, priority, scriptfile):#{{{
     myfunc.WriteFile("Entering SubmitSuqJob()\n", g_params['debugfile'], "a",
             True)
+    logger.info("Entering SubmitSuqJob()")
     rmsg = ""
     cmd = [suq_exec,"-b", suq_basedir, "run", "-d", outpath, "-p", "%d"%(priority), scriptfile]
     cmdline = " ".join(cmd)
     myfunc.WriteFile("cmdline: %s\n\n"%(cmdline), g_params['debugfile'], "a",
             True)
+    logger.debug("cmdline: %s"%(cmdline))
     MAX_TRY = 5
     cnttry = 0
     isSubmitSuccess = False
@@ -155,10 +164,12 @@ def SubmitSuqJob(suq_basedir, datapath, priority, scriptfile):#{{{
     if isSubmitSuccess:
         myfunc.WriteFile("Leaving SubmitSuqJob() with success\n\n",
                 g_params['debugfile'], "a", True)
+        logger.info("Leaving SubmitSuqJob() with success")
         return 0
     else:
         myfunc.WriteFile("Leaving SubmitSuqJob() with error\n\n",
                 g_params['debugfile'], "a", True)
+        logger.info("Leaving SubmitSuqJob() with error")
         return 1
 #}}}
 def main(g_params):#{{{
@@ -253,6 +264,7 @@ def main(g_params):#{{{
     g_params['debugfile'] = "%s/debug.log"%(outpath)
 
     myfunc.WriteFile("Go to SubmitJobToQueue()\n", g_params['debugfile'], "a", True)
+    logger.info("Go to SubmitJobToQueue()")
     return SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user,
             email, host_ip, base_www_url)
 

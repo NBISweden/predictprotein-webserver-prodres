@@ -59,33 +59,39 @@ TEMPLATE_DIRS = (
 
 # LOGGING configuration
 LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': "%s/%s/%s/%s/debug.log"%(BASE_DIR,"pred", "static", "log"),
-        },
-    },
-    'loggers': {
-        'django.request': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'proj.pred.views': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-        'proj.pred.app': {
-            'handlers': ['file'],
-            'level': 'DEBUG',
-            'propagate': True,
-        },
-    },
-}
+        'version': 1,
+        'disable_existing_loggers': False,
+        'formatters':{
+            'simple':{
+                'format': "[%(asctime)s - %(name)s - %(levelname)s]: %(message)s"
+                },
+            },
+        'handlers': {
+            'file': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'simple',
+                'filename': "%s/%s/%s/%s/debug.log"%(BASE_DIR,"pred", "static", "log"),
+                },
+            },
+        'loggers': {
+            'django.request': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            'proj.pred.views': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            'proj.pred.app': {
+                'handlers': ['file'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            },
+        }
 logging.basicConfig(level=logging.INFO)
 #logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
 
