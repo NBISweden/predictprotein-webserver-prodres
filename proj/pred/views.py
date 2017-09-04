@@ -979,8 +979,8 @@ def SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False):#{{{
         myfunc.WriteFile(str(e)+"\n", errfile, "a", True)
         myfunc.WriteFile("cmdline: " + cmdline +"\n", debugfile, "a", True)
         myfunc.WriteFile(rmsg+"\n", errfile, "a", True)
-        logger.debug(("cmdline: %s"%(cmdline)
-        logger.debug(("rmsg: %s"%(str(rmsg)))
+        logger.debug("cmdline: %s"%(cmdline))
+        logger.debug("rmsg: %s"%(str(rmsg)))
 
         return 1
 
