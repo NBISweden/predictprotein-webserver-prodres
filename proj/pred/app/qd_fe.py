@@ -88,7 +88,7 @@ MAX_SUBMIT_JOB_PER_NODE = 200
 MAX_KEEP_DAYS = 30
 gen_errfile = "%s/static/log/%s.err"%(basedir, progname)
 gen_logfile = "%s/static/log/%s.log"%(basedir, progname)
-black_iplist_file = "%s/black_iplist.txt"%(basedir)
+black_iplist_file = "%s/config/black_iplist.txt"%(basedir)
 SLEEP_INTERVAL = 5 # sleep interval in seconds
 
 def PrintHelp(fpout=sys.stdout):#{{{
