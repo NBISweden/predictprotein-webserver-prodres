@@ -127,13 +127,13 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
             True)
     logger.info("priority=%d"%(priority))
 
-    st1 = SubmitSuqJob(suq_basedir, datapath, priority, scriptfile)
+    st1 = SubmitSuqJob(suq_basedir, outpath, datapath, priority, scriptfile)
 
     logger.info("Leaving SubmitJobToQueue()")
 
     return st1
 #}}}
-def SubmitSuqJob(suq_basedir, datapath, priority, scriptfile):#{{{
+def SubmitSuqJob(suq_basedir, outpath, datapath, priority, scriptfile):#{{{
     myfunc.WriteFile("Entering SubmitSuqJob()\n", g_params['debugfile'], "a",
             True)
     logger.info("Entering SubmitSuqJob()")
