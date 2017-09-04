@@ -9,6 +9,7 @@
 # then install programs in the virtual environment
 mkdir -p ~/.virtualenvs
 rundir=`dirname $0`
+rundir=$(readlink -f $rundir)
 cd $rundir
 exec_virtualenv=virtualenv
 if [ -f "/usr/local/bin/virtualenv" ];then
@@ -18,3 +19,30 @@ eval "$exec_virtualenv env"
 source ./env/bin/activate
 
 pip install --ignore-installed -r requirements.txt
+
+echo -e "\nInstall hmmer to env\n"
+tmpdir=$(mktemp -d /tmp/tmpdir.setup_virtualenv.XXXXXXXXX) || { echo "Failed to create temp dir" >&2; exit 1; }
+
+cd $tmpdir
+url=http://eddylab.org/software/hmmer3/3.1b2/hmmer-3.1b2-linux-intel-x86_64.tar.gz
+curl -O $url
+filename=$(basename $url)
+tar -xzf $filename
+foldername=$(find . -maxdepth 1 -type d -name "[^.]*")
+/bin/cp -f $foldername/binaries/* $rundir/env/bin/
+cd $rundir
+/bin/rm -rf $tmpdir
+
+tmpdir=$(mktemp -d /tmp/tmpdir.setup_virtualenv.XXXXXXXXX) || { echo "Failed to create temp dir" >&2; exit 1; }
+cd $tmpdir
+
+echo -e "\nInstall blast to env\n"
+url=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.6.0+-x64-linux.tar.gz
+curl -O $url
+filename=$(basename $url)
+tar -xzf $filename
+foldername=$(find . -maxdepth 1 -type d -name "[^.]*")
+/bin/cp -f $foldername/bin/* $rundir/env/bin/
+cd $rundir
+/bin/rm -rf $tmpdir
+
