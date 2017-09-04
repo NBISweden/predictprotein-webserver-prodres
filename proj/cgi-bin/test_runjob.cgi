@@ -25,17 +25,6 @@ print start_html(-title => "test run job",
     -author => "nanjiang.shu\@scilifelab.se",
     -meta   => {'keywords'=>''});
 
-# if(!param())
-# {
-#     print "<pre>\n";
-#     print "usage: curl get_suqlist.cgi -d base=suqbasedir \n\n";
-#     print "       or in the browser\n\n";
-#     print "       get_suqlist.cgi?base=suqbasedir\n\n";
-#     print "Example\n";
-#     print "       get_suqlist.cgi?base=log\n";
-#     print "</pre>\n";
-#     print end_html();
-# }
 my $remote_host = $ENV{'REMOTE_ADDR'};
 
 my @auth_iplist = ();

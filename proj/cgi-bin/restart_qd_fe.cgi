@@ -1,5 +1,4 @@
 #!/usr/bin/perl -w
-# get set suq ntask
 #Created 2015-03-20, updated 2015-03-20, Nanjiang Shu
 use CGI qw(:standard);
 use CGI qw(:cgi-lib);
