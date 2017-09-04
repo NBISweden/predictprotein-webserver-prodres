@@ -67,26 +67,37 @@ LOGGING = {
                 },
             },
         'handlers': {
-            'file': {
+            'file_debug': {
                 'level': 'DEBUG',
                 'class': 'logging.handlers.RotatingFileHandler',
                 'formatter': 'simple',
                 'filename': "%s/%s/%s/%s/debug.log"%(BASE_DIR,"pred", "static", "log"),
                 },
+            'file_view': {
+                'level': 'DEBUG',
+                'class': 'logging.handlers.RotatingFileHandler',
+                'formatter': 'simple',
+                'filename': "%s/%s/%s/%s/views.log"%(BASE_DIR,"pred", "static", "log"),
+                },
             },
         'loggers': {
             'django.request': {
-                'handlers': ['file'],
+                'handlers': ['file_debug'],
+                'level': 'DEBUG',
+                'propagate': True,
+                },
+            'root': {
+                'handlers': ['file_debug'],
                 'level': 'DEBUG',
                 'propagate': True,
                 },
             'proj.pred.views': {
-                'handlers': ['file'],
+                'handlers': ['file_view'],
                 'level': 'DEBUG',
                 'propagate': True,
                 },
             'proj.pred.app': {
-                'handlers': ['file'],
+                'handlers': ['file_debug'],
                 'level': 'DEBUG',
                 'propagate': True,
                 },

@@ -8,6 +8,10 @@ import time
 import math
 import shutil
 import json
+import logging
+
+
+logger = logging.getLogger(__name__)
 
 
 os.environ['TZ'] = 'Europe/Stockholm'
@@ -966,7 +970,6 @@ def SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False):#{{{
     cmdline = " ".join(cmd)
     try:
         rmsg = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        myfunc.WriteFile("cmdline: " + cmdline +"\n", debugfile, "a", True)
         myfunc.WriteFile(rmsg+"\n", debugfile, "a", True)
     except subprocess.CalledProcessError, e:
         failtagfile = "%s/%s"%(rstdir, "runjob.failed")
@@ -976,6 +979,8 @@ def SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False):#{{{
         myfunc.WriteFile(str(e)+"\n", errfile, "a", True)
         myfunc.WriteFile("cmdline: " + cmdline +"\n", debugfile, "a", True)
         myfunc.WriteFile(rmsg+"\n", errfile, "a", True)
+        logger.debug(("cmdline: %s"%(cmdline)
+        logger.debug(("rmsg: %s"%(str(rmsg)))
 
         return 1
 

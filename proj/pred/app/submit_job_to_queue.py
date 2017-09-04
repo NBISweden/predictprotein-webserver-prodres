@@ -142,7 +142,7 @@ def SubmitSuqJob(suq_basedir, datapath, priority, scriptfile):#{{{
     cmdline = " ".join(cmd)
     myfunc.WriteFile("cmdline: %s\n\n"%(cmdline), g_params['debugfile'], "a",
             True)
-    logger.debug("cmdline: %s"%(cmdline))
+    logger.info("cmdline: %s"%(cmdline))
     MAX_TRY = 5
     cnttry = 0
     isSubmitSuccess = False
