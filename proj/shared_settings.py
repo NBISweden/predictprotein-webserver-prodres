@@ -74,9 +74,19 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': True,
         },
+        'proj.pred.views': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+        'proj.pred.app': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
     },
 }
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 #logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
 
 # Internationalization
