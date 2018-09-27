@@ -1,6 +1,6 @@
-#Web-server for PRODRES
+# Web-server for PRODRES
 
-##Description:
+## Description:
     This is the web-server implementation of the PRODRES workflow.
 
     PRODRES is a fast way to obtain a Position-Specific Scoring Matrix (PSSM) or a
@@ -28,10 +28,10 @@
     prediction tools that need to be run for one or many sequences but the
     computational time for each sequence is short.
 
-##Author
+## Author
 Nanjiang Shu
 
-Short-term bioinformatics support at NBIS
+System developer at NBIS
 
 Email: nanjiang.shu@scilifelab.se
 
@@ -70,7 +70,7 @@ Email: nanjiang.shu@scilifelab.se
 
 6.  On the computational node. run 
 
-    $ virtualenv env --system-site-packages
+        $ virtualenv env --system-site-packages
 
     to make sure that python can use all other system-wide installed packages
 
