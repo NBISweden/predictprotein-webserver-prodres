@@ -64,7 +64,7 @@ OPTIONS:
   -force            Do not use cahced result
   -h, --help        Print this help message and exit
 
-Created 2016-12-01, updated 2016-12-07, Nanjiang Shu
+Created 2016-12-01, 2018-10-11, Nanjiang Shu
 """
 usage_exp="""
 Examples:
@@ -87,6 +87,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     runjob_logfile = "%s/runjob.log"%(outpath)
     app_logfile = "%s/app.log"%(outpath)
     finishtagfile = "%s/runjob.finish"%(outpath)
+    failedtagfile = "%s/runjob.failed"%(outpath)
     query_parafile = "%s/query.para.txt"%(outpath)
 
     query_para = ""
@@ -132,9 +133,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     if hdl.failure:
         isOK = False
     else:
-        datetime = time.strftime("%Y-%m-%d %H:%M:%S")
-        rt_msg = myfunc.WriteFile(datetime, starttagfile)
-
+        webserver_common.WriteDateTimeTagFile(starttagfile, runjob_logfile, runjob_errfile)
         recordList = hdl.readseq()
         cnt = 0
         origpath = os.getcwd()
@@ -211,8 +210,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
         # sortedlist
 
         for item in sortedlist:
-#             g_params['runjob_log'].append("tmpdir = %s"%(tmpdir))
-            #cmd = [script_getseqlen, infile, "-o", tmp_outfile , "-printid"]
             origIndex = item[0]
             seq = item[1][0]
             description = item[1][2]
@@ -268,19 +265,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 cmd += ['--psiblast_outfmt', query_para['psiblast_outfmt']]
 
 
-            cmdline = " ".join(cmd)
-            g_params['runjob_log'].append(" ".join(cmd))
-            begin_time = time.time()
-            try:
-                rmsg = subprocess.check_output(cmd)
-                g_params['runjob_log'].append("workflow:\n"+rmsg+"\n")
-            except subprocess.CalledProcessError, e:
-                g_params['runjob_err'].append(str(e)+"\n")
-                g_params['runjob_err'].append("cmdline: "+ cmdline +"\n")
-                g_params['runjob_err'].append(rmsg + "\n")
-                pass
-            end_time = time.time()
-            runtime_in_sec = end_time - begin_time
+            (t_success, runtime_in_sec) = webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
             aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq+os.sep+"query_0")
             if not os.path.exists(aaseqfile):
@@ -288,19 +273,10 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 myfunc.WriteFile(seqcontent, aaseqfile, "w")
 
 
-
             if os.path.exists(tmp_outpath_this_seq):
                 cmd = ["mv","-f", tmp_outpath_this_seq+os.sep+"query_0", outpath_this_seq]
                 isCmdSuccess = False
-                try:
-                    subprocess.check_output(cmd)
-                    isCmdSuccess = True
-                except subprocess.CalledProcessError, e:
-                    msg =  "Failed to run prediction for sequence No. %d\n"%(origIndex)
-                    g_params['runjob_err'].append(msg)
-                    g_params['runjob_err'].append(str(e)+"\n")
-                    pass
-
+                (isCmdSuccess, t_runtime) = webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
                 if not 'isKeepTempFile' in query_para or query_para['isKeepTempFile'] == False:
                     try:
@@ -366,13 +342,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                         if os.path.exists(md5_subfolder) and not os.path.exists(cachedir):
                             cmd = ["mv","-f", outpath_this_seq, cachedir]
-                            cmdline = " ".join(cmd)
-                            g_params['runjob_log'].append("cmdline: %s"%(cmdline))
-                            try:
-                                subprocess.check_call(cmd)
-                            except CalledProcessError,e:
-                                g_params['runjob_err'].append(str(e)+"\n")
-
+                            webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
                         if not os.path.exists(outpath_this_seq) and os.path.exists(cachedir):
                             rela_path = os.path.relpath(cachedir, outpath_result) #relative path
@@ -402,69 +372,45 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
         os.chdir(outpath)
 #             cmd = ["tar", "-czf", tarball, resultpathname]
         cmd = ["zip", "-rq", zipfile, resultpathname]
-        try:
-            subprocess.check_output(cmd)
-        except subprocess.CalledProcessError, e:
-            g_params['runjob_err'].append(str(e))
-            pass
+        webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile)
 
         # write finish tag file
-        datetime = time.strftime("%Y-%m-%d %H:%M:%S")
         if os.path.exists(finished_seq_file):
-            rt_msg = myfunc.WriteFile(datetime, finishtagfile)
-            if rt_msg:
-                g_params['runjob_err'].append(rt_msg)
+            webserver_common.WriteDateTimeTagFile(finishtagfile, runjob_logfile, runjob_errfile)
 
         isSuccess = False
         if (os.path.exists(finishtagfile) and os.path.exists(zipfile_fullpath)):
             isSuccess = True
         else:
             isSuccess = False
-            failtagfile = "%s/runjob.failed"%(outpath)
-            datetime = time.strftime("%Y-%m-%d %H:%M:%S")
-            rt_msg = myfunc.WriteFile(datetime, failtagfile)
-            if rt_msg:
-                g_params['runjob_err'].append(rt_msg)
+            webserver_common.WriteDateTimeTagFile(failedtagfile, runjob_logfile, runjob_errfile)
+
 
 # send the result to email
 # do not sendmail at the cloud VM
-        if (g_params['base_www_url'].find("bioinfo.se") != -1 and
-                myfunc.IsValidEmailAddress(email)):
-            from_email = "info@prodres.bioinfo.se"
-            to_email = email
-            subject = "Your result for PRODRES JOBID=%s"%(jobid)
+        if webserver_common.IsFrontEndNode(g_params['base_www_url']) and myfunc.IsValidEmailAddress(email):
             if isSuccess:
-                bodytext = """
- Your result is ready at %s/pred/result/%s
-
- Thanks for using PRODRES
-
-            """%(g_params['base_www_url'], jobid)
+                finish_status = "success"
             else:
-                bodytext="""
-We are sorry that your job with jobid %s is failed.
+                finish_status = "failed"
+            webserver_common.SendEmail_on_finish(jobid, g_params['base_www_url'],
+                    finish_status, name_server="PRODRES", from_email="info@prodres.bioinfo.se",
+                    to_email=email, contact_email=contact_email,
+                    runjob_logfile, runjob_errfile)
 
-Please contact %s if you have any questions.
-
-Attached below is the error message:
-%s
-                """%(jobid, contact_email, "\n".join(g_params['runjob_err']))
-            g_params['runjob_log'].append("Sendmail %s -> %s, %s"% (from_email, to_email, subject)) #debug
-            rtValue = myfunc.Sendmail(from_email, to_email, subject, bodytext)
-            if rtValue != 0:
-                g_params['runjob_err'].append("Sendmail to {} failed with status {}".format(to_email, rtValue))
-
-    #myfunc.WriteFile("%s END runjob_err='%s'\n"%(jobid, g_params['runjob_err']), gen_logfile, "a", True )
-    if g_params['runjob_err'] == []:
-        try:
-            g_params['runjob_log'].append("shutil.rmtree(%s)"% (tmpdir))
-            shutil.rmtree(tmpdir) #DEBUG, keep tmpdir
-        except:
-            g_params['runjob_err'].append("Failed to delete tmpdir %s"%(tmpdir))
-    if len(g_params['runjob_err']) > 0:
-        rt_msg = myfunc.WriteFile("\n".join(g_params['runjob_err'])+"\n", runjob_errfile, "w")
+    if os.path.exists(runjob_errfile) and os.path.getsize(runjob_errfile) > 1:
         return 1
-    return 0
+    else:
+        date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+        try:
+            shutil.rmtree(tmpdir)
+            msg = "rmtree(%s)"%(tmpdir)
+            myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_logfile, "a", True)
+        except Exception as e:
+            msg = "Failed to rmtree(%s)"%(tmpdir)
+            myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
+            pass
+        return 0
 #}}}
 def main(g_params):#{{{
     argv = sys.argv
@@ -523,7 +469,6 @@ def main(g_params):#{{{
         print >> sys.stderr, "%s: jobid not set. exit"%(sys.argv[0])
         return 1
 
-    g_params['jobid'] = jobid
     # create a lock file in the resultpath when run_job.py is running for this
     # job, so that daemon will not run on this folder
     lockname = "runjob.lock"
@@ -567,12 +512,9 @@ def main(g_params):#{{{
 def InitGlobalParameter():#{{{
     g_params = {}
     g_params['isQuiet'] = True
-    g_params['runjob_log'] = []
-    g_params['runjob_err'] = []
     g_params['isForceRun'] = False
     g_params['isOnlyGetCache'] = False
     g_params['base_www_url'] = ""
-    g_params['jobid'] = ""
     g_params['lockfile'] = ""
     return g_params
 #}}}
