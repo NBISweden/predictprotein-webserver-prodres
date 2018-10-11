@@ -1,7 +1,8 @@
 # Web-server for PRODRES
 
 ## Description:
-    This is the web-server implementation of the PRODRES workflow.
+    This is the web-server implementation of the
+    [PRODRES](https://github.com/ElofssonLab/PRODRES) workflow.
 
     PRODRES is a fast way to obtain a Position-Specific Scoring Matrix (PSSM) or a
     jackhmmer-generated profile Hidden Markov Model (pHMM). By using the PFAM
