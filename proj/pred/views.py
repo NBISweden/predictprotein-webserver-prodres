@@ -63,6 +63,7 @@ g_params['FORMAT_DATETIME'] = "%Y-%m-%d %H:%M:%S %Z"
 
 SITE_ROOT = os.path.dirname(os.path.realpath(__file__))
 progname =  os.path.basename(__file__)
+rootname_progname = os.path.splitext(progname)[0]
 path_app = "%s/app"%(SITE_ROOT)
 sys.path.append(path_app)
 path_log = "%s/static/log"%(SITE_ROOT)
@@ -74,6 +75,7 @@ path_md5 = "%s/static/md5"%(SITE_ROOT)
 python_exec = os.path.realpath("%s/../../env/bin/python"%(SITE_ROOT))
 
 import myfunc
+import webserver_common
 
 suq_basedir = "/tmp"
 if os.path.exists("/scratch"):
@@ -283,7 +285,7 @@ def submit_seq(request):#{{{
 
             is_valid_parameter = webserver_common.ValidateParameter_PRODRES(query)
 
-            is_valid_query = False:
+            is_valid_query = False
             if is_valid_parameter:
                 is_valid_query = webserver_common.ValidateQuery(request, query, g_params)
 
@@ -655,7 +657,8 @@ def RunQuery_wsdl_local(rawseq, filtered_seq, seqinfo):#{{{
 def SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False):#{{{
     scriptfile = "%s/app/submit_job_to_queue.py"%(SITE_ROOT)
     rstdir = "%s/%s"%(path_result, query['jobid'])
-    errfile = "%s/runjob.err"%(rstdir)
+    runjob_errfile = "%s/runjob.err"%(rstdir)
+    runjob_logfile = "%s/%s"%(rstdir, "runjob.log")
     failedtagfile = "%s/%s"%(rstdir, "runjob.failed")
     debugfile = "%s/debug.log"%(rstdir) #this log only for debugging
     logfile = "%s/runjob.log"%(rstdir)
@@ -1986,6 +1989,7 @@ def get_results(request, jobid="1"):#{{{
     seqwarninfo = ""
     if os.path.exists(file_seq_warning):
         seqwarninfo = myfunc.ReadFile(file_seq_warning)
+        seqwarninfo = seqwarninfo.strip()
 
     size_zipfile_str = ""
     if os.path.exists(zipfile):

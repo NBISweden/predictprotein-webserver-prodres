@@ -12,6 +12,11 @@ import sys
 import myfunc
 import datetime
 import tabulate
+import re
+import time
+import sqlite3
+import logging
+import subprocess
 def WriteSubconsTextResultFile(outfile, outpath_result, maplist,#{{{
         runtime_in_sec, base_www_url, statfile=""):
     try:
@@ -192,7 +197,7 @@ def ValidateParameter_PRODRES(query_para):#{{{
         query_para['errinfo'] += "Both Jackhmmer E-value and Jackhmmer Bit-score "\
                 "are set! One and only one of them should be set!"
         is_valid = False
-    query['isValidSeq'] = is_valid
+    query_para['isValidSeq'] = is_valid
     return is_valid
 #}}}
 def ValidateQuery(request, query, g_params):#{{{

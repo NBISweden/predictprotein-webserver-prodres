@@ -226,7 +226,9 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             myfunc.WriteFile(seqcontent, seqfile_this_seq, "w")
 
             if not os.path.exists(seqfile_this_seq):
-                g_params['runjob_err'].append("failed to generate seq index %d"%(origIndex))
+                msg = "failed to generate seq index %d"%(origIndex)
+                date_str = time.strftime(g_params['FORMAT_DATETIME'])
+                myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
                 continue
 
 
@@ -281,7 +283,9 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                         temp_result_folder = "%s/temp"%(outpath_this_seq)
                         shutil.rmtree(temp_result_folder)
                     except:
-                        g_params['runjob_err'].append("Failed to delete the folder %s"%(temp_result_folder)+"\n")
+                        msg = "Failed to delete the folder %s"%(temp_result_folder)
+                        date_str = time.strftime(g_params['FORMAT_DATETIME'])
+                        myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
 
                     flist = [
                             "%s/outputs/%s"%(outpath_this_seq, "Alignment.txt"),
@@ -293,7 +297,9 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                             try:
                                 os.remove(f)
                             except:
-                                g_params['runjob_err'].append("Failed to delete the file %s"%(f)+"\n")
+                                msg = "Failed to delete the file %s"%(f)
+                                date_str = time.strftime(g_params['FORMAT_DATETIME'])
+                                myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
 
                 if isCmdSuccess:
                     runtime = runtime_in_sec #in seconds
@@ -329,7 +335,9 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                             try:
                                 shutil.rmtree(cachedir)
                             except:
-                                g_params['runjob_err'].append("failed to shutil.rmtree(%s)"%(cachedir)+"\n")
+                                msg = "Failed to shutil.rmtree(%s)"%(cachedir)
+                                date_str = time.strftime(g_params['FORMAT_DATETIME'])
+                                myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
                                 pass
 
                         if not os.path.exists(md5_subfolder):
@@ -352,12 +360,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
     all_end_time = time.time()
     all_runtime_in_sec = all_end_time - all_begin_time
-
-    if len(g_params['runjob_log']) > 0 :
-        rt_msg = myfunc.WriteFile("\n".join(g_params['runjob_log'])+"\n", runjob_logfile, "a")
-        if rt_msg:
-            g_params['runjob_err'].append(rt_msg)
-
 
     if not g_params['isOnlyGetCache'] or len(toRunDict) == 0:
         # now write the text output to a single file
