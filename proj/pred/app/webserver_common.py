@@ -174,6 +174,27 @@ def WriteDateTimeTagFile(outfile, runjob_logfile, runjob_errfile):# {{{
             msg = "Failed to write to file %s with message: \"%s\""%(outfile, str(e))
             myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  runjob_errfile, "a", True)
 # }}}
+def ValidateParameter_PRODRES(query_para):#{{{
+    """Validate the input parameters for PRODRES
+    query_para is a dictionary
+    """
+    is_valid = True
+    if not 'errinfo' in query_para:
+        query_para['errinfo'] = ""
+    if query_para['pfamscan_evalue'] != "" and query_para['pfamscan_bitscore'] != "":
+        query_para['errinfo'] += "Parameter setting error!"
+        query_para['errinfo'] += "Both PfamScan E-value and PfamScan Bit-score "\
+                "are set! One and only one of them should be set!"
+        is_valid = False
+
+    if query_para['jackhmmer_bitscore'] != "" and query_para['jackhmmer_evalue'] != "":
+        query_para['errinfo'] += "Parameter setting error!"
+        query_para['errinfo'] += "Both Jackhmmer E-value and Jackhmmer Bit-score "\
+                "are set! One and only one of them should be set!"
+        is_valid = False
+    query['isValidSeq'] = is_valid
+    return is_valid
+#}}}
 def ValidateQuery(request, query, g_params):#{{{
     query['errinfo_br'] = ""
     query['errinfo_content'] = ""
