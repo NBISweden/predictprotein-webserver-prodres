@@ -543,6 +543,7 @@ def RunQuery(request, query):#{{{
     for item in ['pfamscan_bitscore', 'pfamscan_evalue','pfamscan_clanoverlap','jackhmmer_threshold_type', 'jackhmmer_evalue','jackhmmer_bitscore', 'jackhmmer_iteration', 'psiblast_evalue', 'psiblast_iteration', 'psiblast_outfmt', 'second_method', 'isKeepTempFile']:
         if item in query:
             query_para[item] = query[item]
+    query_para['name_software'] = "prodres"
 
     query_parafile = "%s/query.para.txt"%(rstdir)
 

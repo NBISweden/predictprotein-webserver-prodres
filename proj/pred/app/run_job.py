@@ -79,7 +79,6 @@ def PrintHelp(fpout=sys.stdout):#{{{
 def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     all_begin_time = time.time()
 
-    #myfunc.WriteFile("%s BEGIN runjob_err='%s'\n"%(jobid, g_params['runjob_err']), gen_logfile, "a", True ) #debug
 
     rootname = os.path.basename(os.path.splitext(infile)[0])
     starttagfile   = "%s/runjob.start"%(outpath)
@@ -96,7 +95,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
         query_para = json.loads(content)
 
     rmsg = ""
-
 
     resultpathname = jobid
 
