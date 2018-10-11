@@ -373,9 +373,10 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
 
                             extItem1 = None
                             extItem2 = None
+                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
                             info_finish = [ dd, str(len(seq)), 
                                     str(extItem1), str(extItem2),
-                                    "newrun", str(runtime), description]
+                                    "newrun", str(runtime), description, date_str]
                             finished_info_list.append("\t".join(info_finish))
                 except:
                     date_str = time.strftime(g_params['FORMAT_DATETIME'])
@@ -541,9 +542,10 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                         runtime = 0.0 #in seconds
                         extItem1 = None
                         extItem2 = None
+                        date_str = time.strftime(g_params['FORMAT_DATETIME'])
                         info_finish = [ "seq_%d"%i, str(len(seqList[i])), 
                                 str(extItem1), str(extItem2),
-                                str(runtime), seqAnnoList[i]]
+                                str(runtime), seqAnnoList[i], date_str]
                         myfunc.WriteFile("\t".join(info_finish)+"\n",
                                 finished_seq_file, "a", isFlush=True)
                         init_finished_idx_list.append(str(i))
@@ -1011,9 +1013,10 @@ def GetResult(jobid):#{{{
 
             extItem1 = None
             extItem2 = None
+            date_str = time.strftime(g_params['FORMAT_DATETIME'])
             info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
                     str(extItem1), str(extItem2),
-                    "newrun", str(runtime), description]
+                    "newrun", str(runtime), description, date_str]
             finished_info_list.append("\t".join(info_finish))
             finished_idx_list.append(str(origIndex))#}}}
 

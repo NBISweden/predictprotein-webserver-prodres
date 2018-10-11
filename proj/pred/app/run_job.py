@@ -167,9 +167,10 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                             runtime = 0.0 #in seconds
                             extItem1 = None
                             extItem2 = None
+                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
                             info_finish = [ "seq_%d"%cnt, str(len(rd.seq)),
                                     str(extItem1), str(extItem2),
-                                    "cached", str(runtime), rd.description]
+                                    "cached", str(runtime), rd.description, date_str]
                             myfunc.WriteFile("\t".join(info_finish)+"\n",
                                     finished_seq_file, "a", isFlush=True)
                             isSkip = True
@@ -313,9 +314,10 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                             pass
                     extItem1 = None
                     extItem2 = None
+                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
                     info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
                             str(extItem1), str(extItem2),
-                            "newrun", str(runtime), description]
+                            "newrun", str(runtime), description, date_str]
                     myfunc.WriteFile("\t".join(info_finish)+"\n",
                             finished_seq_file, "a", isFlush=True)
                     # now write the text output for this seq

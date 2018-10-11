@@ -2033,7 +2033,7 @@ def get_results(request, jobid="1"):#{{{
 # get seqid_index_map
     if os.path.exists(finished_seq_file):
         resultdict['index_table_header'] = ["No.", "Length", "PSSM", "HMM",
-                "RunTime(s)", "SequenceName", "Source" ]
+                "RunTime(s)", "SequenceName", "Source", "FinishDate" ]
         index_table_content_list = []
         indexmap_content = myfunc.ReadFile(finished_seq_file).split("\n")
         cnt = 0
@@ -2045,6 +2045,10 @@ def get_results(request, jobid="1"):#{{{
                 subfolder = strs[0]
                 length_str = strs[1]
                 source = strs[4]
+                try:
+                    finishdate = strs[7]
+                except IndexError:
+                    finishdate = "N/A"
                 try:
                     if query_para['second_method'] == "psiblast":
                         filelist = [
@@ -2085,7 +2089,7 @@ def get_results(request, jobid="1"):#{{{
                 rank = "%d"%(cnt+1)
                 if cnt < g_params['MAX_ROWS_TO_SHOW_IN_TABLE']:
                     index_table_content_list.append([rank, length_str, pssm_resultfile_list,
-                        hmm_resultfile_list, runtime_in_sec_str, desp[:30], subfolder, source])
+                        hmm_resultfile_list, runtime_in_sec_str, desp[:30], subfolder, source, finishdate])
                 if source == "newrun":
                     newrun_table_list.append([rank, subfolder])
                 cnt += 1
