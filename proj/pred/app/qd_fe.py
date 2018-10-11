@@ -467,6 +467,8 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
     para_str = content
     if content != "":
         query_para = json.loads(content)
+    else:
+        query_para = {}
     tmpdir = "%s/tmpdir"%(rstdir)
     qdinittagfile = "%s/runjob.qdinit"%(rstdir)
     failedtagfile = "%s/%s"%(rstdir, "runjob.failed")
@@ -656,6 +658,8 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 
                 isSubmitSuccess = False
                 if len(seq) > 0:
+                    query_para['name_software'] = "subcons"
+                    para_str = json.dumps(query_para, sort_keys=True)
                     jobname = ""
                     if not email in vip_user_list:
                         useemail = ""
@@ -668,7 +672,8 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                                 jobname, useemail, str(numseq_this_user), isforcerun)
                     except:
                         date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                        myfunc.WriteFile("[Date: %s] Failed to run myclient.service.submitjob_remote\n"%(date_str), gen_errfile, "a", True)
+                        msg = "Failed to run myclient.service.submitjob_remote for job %s seq_%d"%(jobid, origIndex)
+                        myfunc.WriteFile("[%s] %s\n"%(date_str, msg), gen_errfile, "a", True)
                         rtValue = []
                         pass
 
