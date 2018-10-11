@@ -43,6 +43,7 @@ vip_user_list = [
 # make sure that only one instance of the script is running
 # this code is working 
 progname = os.path.basename(__file__)
+rootname_progname = os.path.splitext(progname)[0]
 lockname = os.path.realpath(__file__).replace(" ", "").replace("/", "-")
 import fcntl
 lock_file = "/tmp/%s.lock"%(lockname)
@@ -728,6 +729,8 @@ def GetResult(jobid):#{{{
     # retrieving result from the remote server for this job
     myfunc.WriteFile("GetResult for %s.\n" %(jobid), gen_logfile, "a", True)
     rstdir = "%s/%s"%(path_result, jobid)
+    runjob_logfile = "%s/%s"%(rstdir, "runjob.log")
+    runjob_errfile = "%s/%s"%(rstdir, "runjob.err")
     outpath_result = "%s/%s"%(rstdir, jobid)
     if not os.path.exists(outpath_result):
         os.mkdir(outpath_result)
@@ -883,14 +886,7 @@ def GetResult(jobid):#{{{
                             pass
                     if os.path.exists(outfile_zip) and isRetrieveSuccess:
                         cmd = ["unzip", outfile_zip, "-d", tmpdir]
-                        cmdline = " ".join(cmd)
-                        try:
-                            rmsg = subprocess.check_output(cmd)
-                        except subprocess.CalledProcessError, e:
-                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                            myfunc.WriteFile("[Date: %s] cmdline=%s\nerrmsg=%s\n"%(
-                                    date_str, cmdline, str(e)), gen_errfile, "a", True)
-                            pass
+                        webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile)
                         rst_this_seq = "%s/%s/seq_0"%(tmpdir, remote_jobid)
 
                         if os.path.islink(outpath_this_seq):
@@ -954,16 +950,7 @@ def GetResult(jobid):#{{{
                                 if os.path.exists(md5_subfolder) and not os.path.exists(cachedir):
 
                                     cmd = ["mv","-f", outpath_this_seq, cachedir]
-                                    cmdline = " ".join(cmd)
-                                    try:
-                                        subprocess.check_output(cmd)
-                                        if g_params['DEBUG_CACHE']:
-                                            myfunc.WriteFile("\tDEBUG_CACHE: %s\n"%(cmdline), gen_logfile, "a", True)
-                                    except CalledProcessError,e:
-                                        print e
-                                        if g_params['DEBUG_CACHE']:
-                                            myfunc.WriteFile("\tDEBUG_CACHE: %s\n"%(str(e)), gen_logfile, "a", True)
-                                        pass
+                                    webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile)
 
                                 if not os.path.exists(outpath_this_seq) and os.path.exists(cachedir):
                                     rela_path = os.path.relpath(cachedir, outpath_result) #relative path
@@ -1137,7 +1124,7 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
             webserver_common.SendEmail_on_finish(jobid, base_www_url,
                     finish_status, name_server="PRODRES", from_email="info@prodres.bioinfo.se",
                     to_email=email, contact_email=contact_email,
-                    runjob_logfile, runjob_errfile)
+                    logfile=runjob_logfile, errfile=runjob_errfile)
 
         webserver_common.CleanJobFolder_PRODRES(rstdir)
 #}}}
@@ -1879,7 +1866,7 @@ def main(g_params):#{{{
             num_queue_job = len(remotequeueDict[node])
             if num_queue_job >= 0:
                 cntSubmitJobDict[node] = [num_queue_job,
-                        g_params['MAX_SUBMIT_JOB_PER_NODE'] #[num_queue_job, max_allowed_job]
+                        g_params['MAX_SUBMIT_JOB_PER_NODE']] #[num_queue_job, max_allowed_job]
             else:
                 cntSubmitJobDict[node] = [g_params['MAX_SUBMIT_JOB_PER_NODE'],
                         g_params['MAX_SUBMIT_JOB_PER_NODE']] #[num_queue_job, max_allowed_job]

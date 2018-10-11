@@ -396,12 +396,12 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             webserver_common.SendEmail_on_finish(jobid, g_params['base_www_url'],
                     finish_status, name_server="PRODRES", from_email="info@prodres.bioinfo.se",
                     to_email=email, contact_email=contact_email,
-                    runjob_logfile, runjob_errfile)
+                    logfile=runjob_logfile, errfile=runjob_errfile)
 
     if os.path.exists(runjob_errfile) and os.path.getsize(runjob_errfile) > 1:
         return 1
     else:
-        date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+        date_str = time.strftime(g_params['FORMAT_DATETIME'])
         try:
             shutil.rmtree(tmpdir)
             msg = "rmtree(%s)"%(tmpdir)
@@ -516,6 +516,7 @@ def InitGlobalParameter():#{{{
     g_params['isOnlyGetCache'] = False
     g_params['base_www_url'] = ""
     g_params['lockfile'] = ""
+    g_params['FORMAT_DATETIME'] = "%Y-%m-%d %H:%M:%S %Z"
     return g_params
 #}}}
 if __name__ == '__main__' :

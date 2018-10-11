@@ -116,7 +116,7 @@ def IsFrontEndNode(base_www_url):#{{{
         else:
             return True
 #}}}
-def RunCmd(cmd, runjob_logfile, runjob_errfile, verbose=False):# {{{
+def RunCmd(cmd, logfile, errfile, verbose=False):# {{{
     """Input cmd in list
        Run the command and also output message to logs
     """
@@ -130,11 +130,11 @@ def RunCmd(cmd, runjob_logfile, runjob_errfile, verbose=False):# {{{
         rmsg = subprocess.check_output(cmd)
         if verbose:
             msg = "workflow: %s"%(cmdline)
-            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  runjob_logfile, "a", True)
+            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  logfile, "a", True)
         isCmdSuccess = True
     except subprocess.CalledProcessError, e:
         msg = "cmdline: %s\nFailed with message \"%s\""%(cmdline, str(e))
-        myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  runjob_errfile, "a", True)
+        myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  errfile, "a", True)
         isCmdSuccess = False
         pass
 
@@ -163,16 +163,16 @@ def datetime_str_to_time(date_str):# {{{
     else:
         return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %Z")
 # }}}
-def WriteDateTimeTagFile(outfile, runjob_logfile, runjob_errfile):# {{{
+def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
     if not os.path.exists(outfile):
         date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
         try:
             myfunc.WriteFile(date_str, outfile)
             msg = "Write tag file %s succeeded"%(outfile)
-            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  runjob_logfile, "a", True)
+            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  logfile, "a", True)
         except Exception as e:
             msg = "Failed to write to file %s with message: \"%s\""%(outfile, str(e))
-            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  runjob_errfile, "a", True)
+            myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  errfile, "a", True)
 # }}}
 def ValidateParameter_PRODRES(query_para):#{{{
     """Validate the input parameters for PRODRES
@@ -414,13 +414,13 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
     seqinfo['errinfo'] = seqinfo['errinfo_br'] + seqinfo['errinfo_content']
     return filtered_seq
 #}}}
-def SendEmail_on_finish(jobid, base_www_url, finish_status, name_server, from_email, to_email, contact_email, runjob_logfile="", runjob_errfile=""):# {{{
+def SendEmail_on_finish(jobid, base_www_url, finish_status, name_server, from_email, to_email, contact_email, logfile="", errfile=""):# {{{
     """Send notification email to the user for the web-server, the name
     of the web-server is specified by the var 'name_server'
     """
     err_msg = ""
-    if os.path.exists(runjob_errfile):
-        err_msg = myfunc.ReadFile(runjob_errfile)
+    if os.path.exists(errfile):
+        err_msg = myfunc.ReadFile(errfile)
 
     subject = "Your result for %s JOBID=%s"%(name_server, jobid)
     if finish_status == "success":
@@ -455,11 +455,11 @@ Attached below is the error message:
 
     date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
     msg =  "Sendmail %s -> %s, %s"%(from_email, to_email, subject)
-    myfunc.WriteFile("[%s] %s\n"% (date_str, msg), runjob_logfile, "a", True)
+    myfunc.WriteFile("[%s] %s\n"% (date_str, msg), logfile, "a", True)
     rtValue = myfunc.Sendmail(from_email, to_email, subject, bodytext)
     if rtValue != 0:
         msg =  "Sendmail to {} failed with status {}".format(to_email, rtValue)
-        myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
+        myfunc.WriteFile("[%s] %s\n"%(date_str, msg), errfile, "a", True)
         return 1
     else:
         return 0
