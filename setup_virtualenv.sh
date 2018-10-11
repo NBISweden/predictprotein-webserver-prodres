@@ -37,12 +37,16 @@ tmpdir=$(mktemp -d /tmp/tmpdir.setup_virtualenv.XXXXXXXXX) || { echo "Failed to 
 cd $tmpdir
 
 echo -e "\nInstall blast to env\n"
-url=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ncbi-blast-2.6.0+-x64-linux.tar.gz
+url=ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/2.2.31/ncbi-blast-2.2.31+-x64-linux.tar.gz
 curl -O $url
 filename=$(basename $url)
 tar -xzf $filename
 foldername=$(find . -maxdepth 1 -type d -name "[^.]*")
-/bin/cp -f $foldername/bin/* $rundir/env/bin/
+if [ "$foldername" != "" ];then
+    /bin/cp -f $foldername/bin/* $rundir/env/bin/
+else
+    echo "fetching psiblast package filed"
+fi
 cd $rundir
 /bin/rm -rf $tmpdir
 
