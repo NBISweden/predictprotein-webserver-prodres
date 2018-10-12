@@ -660,7 +660,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 
                 isSubmitSuccess = False
                 if len(seq) > 0:
-                    query_para['name_software'] = "subcons"
+                    query_para['name_software'] = "prodres"
                     para_str = json.dumps(query_para, sort_keys=True)
                     jobname = ""
                     if not email in vip_user_list:
