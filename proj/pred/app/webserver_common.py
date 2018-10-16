@@ -20,6 +20,7 @@ import sqlite3
 import logging
 import subprocess
 
+FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 TZ = "Europe/Stockholm"
 
 def GetLocDef(predfile):#{{{
@@ -76,7 +77,7 @@ def RunCmd(cmd, logfile, errfile, verbose=False):# {{{
 
     isCmdSuccess = False
     cmdline = " ".join(cmd)
-    date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+    date_str = time.strftime(FORMAT_DATETIME)
     rmsg = ""
     try:
         rmsg = subprocess.check_output(cmd)
@@ -113,7 +114,7 @@ def datetime_str_to_time(date_str):# {{{
 # }}}
 def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
     if not os.path.exists(outfile):
-        date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+        date_str = time.strftime(FORMAT_DATETIME)
         try:
             myfunc.WriteFile(date_str, outfile)
             msg = "Write tag file %s succeeded"%(outfile)
@@ -401,7 +402,7 @@ Attached below is the error message:
 %s
         """%(base_www_url, jobid, name_server, contact_email, err_msg)
 
-    date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+    date_str = time.strftime(FORMAT_DATETIME)
     msg =  "Sendmail %s -> %s, %s"%(from_email, to_email, subject)
     myfunc.WriteFile("[%s] %s\n"% (date_str, msg), logfile, "a", True)
     rtValue = myfunc.Sendmail(from_email, to_email, subject, bodytext)
@@ -436,7 +437,7 @@ def DeleteOldResult(path_result, path_log, logfile, MAX_KEEP_DAYS=180):#{{{
                 timeDiff = current_time - finish_date
                 if timeDiff.days > MAX_KEEP_DAYS:
                     rstdir = "%s/%s"%(path_result, jobid)
-                    date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
+                    date_str = time.strftime(FORMAT_DATETIME)
                     msg = "\tjobid = %s finished %d days ago (>%d days), delete."%(jobid, timeDiff.days, MAX_KEEP_DAYS)
                     myfunc.WriteFile("[%s] "%(date_str)+ msg + "\n", logfile, "a", True)
                     shutil.rmtree(rstdir)
@@ -445,6 +446,7 @@ def CleanServerFile(logfile, errfile):#{{{
     """Clean old files on the server"""
 # clean tmp files
     msg = "CleanServerFile..."
+    date_str = time.strftime(FORMAT_DATETIME)
     myfunc.WriteFile("[%s] %s\n"%(date_str, msg), logfile, "a", True)
     cmd = ["bash", "%s/clean_server_file.sh"%(rundir)]
     webserver_common.RunCmd(cmd, logfile, errfile)
