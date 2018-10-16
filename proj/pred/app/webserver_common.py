@@ -11,69 +11,14 @@ import os
 import sys
 import myfunc
 import datetime
+from dateutil import parser as dtparser
+from pytz import timezone
 import tabulate
 import re
 import time
 import sqlite3
 import logging
 import subprocess
-def WriteSubconsTextResultFile(outfile, outpath_result, maplist,#{{{
-        runtime_in_sec, base_www_url, statfile=""):
-    try:
-        fpout = open(outfile, "w")
-        if statfile != "":
-            fpstat = open(statfile, "w")
-
-        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print >> fpout, "##############################################################################"
-        print >> fpout, "Subcons result file"
-        print >> fpout, "Generated from %s at %s"%(base_www_url, date)
-        print >> fpout, "Total request time: %.1f seconds."%(runtime_in_sec)
-        print >> fpout, "##############################################################################"
-        cnt = 0
-        for line in maplist:
-            strs = line.split('\t')
-            subfoldername = strs[0]
-            length = int(strs[1])
-            desp = strs[2]
-            seq = strs[3]
-            seqid = myfunc.GetSeqIDFromAnnotation(desp)
-            print >> fpout, "Sequence number: %d"%(cnt+1)
-            print >> fpout, "Sequence name: %s"%(desp)
-            print >> fpout, "Sequence length: %d aa."%(length)
-            print >> fpout, "Sequence:\n%s\n\n"%(seq)
-
-            rstfile = "%s/%s/%s/query_0.csv"%(outpath_result, subfoldername, "plot")
-
-            if os.path.exists(rstfile):
-                content = myfunc.ReadFile(rstfile).strip()
-                lines = content.split("\n")
-                if len(lines) >= 6:
-                    header_line = lines[0].split("\t")
-                    if header_line[0].strip() == "":
-                        header_line[0] = "Method"
-                        header_line = [x.strip() for x in header_line]
-
-                    data_line = []
-                    for i in xrange(1, len(lines)):
-                        strs1 = lines[i].split("\t")
-                        strs1 = [x.strip() for x in strs1]
-                        data_line.append(strs1)
-
-                    content = tabulate.tabulate(data_line, header_line, 'plain')
-            else:
-                content = ""
-            if content == "":
-                content = "***No prediction could be produced with this method***"
-
-            print >> fpout, "Prediction results:\n\n%s\n\n"%(content)
-
-            print >> fpout, "##############################################################################"
-            cnt += 1
-
-    except IOError:
-        print "Failed to write to file %s"%(outfile)
-#}}}
 
 def GetLocDef(predfile):#{{{
     """
@@ -152,21 +97,17 @@ def datetime_str_to_epoch(date_str):# {{{
     """convert the datetime in string to epoch
     The string of datetime may with or without the zone info
     """
-    strs = date_str.split()
-    if len(strs) == 2:
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").strftime('%s')
-    else:
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %Z").strftime('%s')
+    return dtparser.parse(date_str).strftime("%s")
 # }}}
 def datetime_str_to_time(date_str):# {{{
     """convert the datetime in string to datetime type
     The string of datetime may with or without the zone info
     """
     strs = date_str.split()
+    dt = dtparser.parse(date_str)
     if len(strs) == 2:
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
-    else:
-        return datetime.datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S %Z")
+        dt = dt.replace(tzinfo=timezone('UTC'))
+    return dt
 # }}}
 def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
     if not os.path.exists(outfile):

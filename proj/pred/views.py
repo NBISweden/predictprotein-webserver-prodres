@@ -3,7 +3,9 @@ import sys
 import tempfile
 import re
 import subprocess
-import datetime
+from datetime import datetime
+from dateutil import parser as dtparser
+from pytz import timezone
 import time
 import math
 import shutil
@@ -13,8 +15,8 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
-os.environ['TZ'] = 'Europe/Stockholm'
+TZ = 'Europe/Stockholm'
+os.environ['TZ'] = TZ
 time.tzset()
 
 # for dealing with IP address and country names
@@ -446,7 +448,7 @@ def GetJobCounter(client_ip, isSuperUser, logfile_query, #{{{
             elif status == "Failed":
                 failed_jobid_set.add(jobid)
         lines = hdl.readlines()
-        current_time = datetime.datetime.now()
+        current_time = datetime.now(timezone(TZ))
         while lines != None:
             for line in lines:
                 strs = line.split("\t")
@@ -733,7 +735,7 @@ def get_queue(request):#{{{
         finished_jobid_set = set(finished_jobid_list)
         jobRecordList = []
         lines = hdl.readlines()
-        current_time = datetime.datetime.now()
+        current_time = datetime.now(timezone(TZ))
         while lines != None:
             for line in lines:
                 strs = line.split("\t")
@@ -851,7 +853,7 @@ def get_running(request):#{{{
         finished_jobid_set = set(finished_jobid_list)
         jobRecordList = []
         lines = hdl.readlines()
-        current_time = datetime.datetime.now()
+        current_time = datetime.now(timezone(TZ))
         while lines != None:
             for line in lines:
                 strs = line.split("\t")
@@ -994,7 +996,7 @@ def get_finished_job(request):#{{{
         finished_job_dict = ReadFinishedJobLog(divided_logfile_finished_jobid)
         jobRecordList = []
         lines = hdl.readlines()
-        current_time = datetime.datetime.now()
+        current_time = datetime.now(timezone(TZ))
         while lines != None:
             for line in lines:
                 strs = line.split("\t")
@@ -1158,7 +1160,7 @@ def get_failed_job(request):#{{{
         finished_job_dict = ReadFinishedJobLog(divided_logfile_finished_jobid)
         jobRecordList = []
         lines = hdl.readlines()
-        current_time = datetime.datetime.now()
+        current_time = datetime.now(timezone(TZ))
         while lines != None:
             for line in lines:
                 strs = line.split("\t")
@@ -1895,7 +1897,7 @@ def get_results(request, jobid="1"):#{{{
         submit_date = webserver_common.datetime_str_to_time(submit_date_str)
     except ValueError:
         isValidSubmitDate = False
-    current_time = datetime.datetime.now()
+    current_time = datetime.now(timezone(TZ))
 
     resultdict['isResultFolderExist'] = True
     resultdict['errinfo'] = ""
