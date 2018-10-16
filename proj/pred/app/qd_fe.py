@@ -1140,35 +1140,6 @@ def CheckIfJobFinished(jobid, numseq, email):#{{{
         webserver_common.CleanJobFolder_PRODRES(rstdir)
 #}}}
 #}}}
-def DeleteOldResult(path_result, path_log):#{{{
-    """Delete jobdirs that are finished > MAX_KEEP_DAYS
-    """
-    finishedjoblogfile = "%s/finished_job.log"%(path_log)
-    finished_job_dict = myfunc.ReadFinishedJobLog(finishedjoblogfile)
-    for jobid in finished_job_dict:
-        li = finished_job_dict[jobid]
-        try:
-            finish_date_str = li[8]
-        except IndexError:
-            finish_date_str = ""
-            pass
-        if finish_date_str != "":
-            isValidFinishDate = True
-            try:
-                finish_date = webserver_common.datetime_str_to_time(finish_date_str)
-            except ValueError:
-                isValidFinishDate = False
-
-            if isValidFinishDate:
-                current_time = datetime.now(timezone(TZ))
-                timeDiff = current_time - finish_date
-                if timeDiff.days > g_params['MAX_KEEP_DAYS']:
-                    rstdir = "%s/%s"%(path_result, jobid)
-                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                    msg = "\tjobid = %s finished %d days ago (>%d days), delete."%(jobid, timeDiff.days, g_params['MAX_KEEP_DAYS'])
-                    myfunc.WriteFile("[Date: %s] "%(date_str)+ msg + "\n", gen_logfile, "a", True)
-                    shutil.rmtree(rstdir)
-#}}}
 def RunStatistics(path_result, path_log):#{{{
 # 1. calculate average running time, only for those sequences with time.txt
 # show also runtime of type and runtime -vs- seqlength
@@ -1861,7 +1832,8 @@ def main(g_params):#{{{
 
         if loop % 800 == 50:
             RunStatistics(path_result, path_log)
-            DeleteOldResult(path_result, path_log)
+            webserver_common.DeleteOldResult(path_result, path_log, gen_logfile, MAX_KEEP_DAYS=g_params['MAX_KEEP_DAYS'])
+            webserver_common.CleanServerFile(gen_logfile, gen_errfile)
 
         ArchiveLogFile()
 
