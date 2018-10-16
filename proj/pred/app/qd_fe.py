@@ -23,7 +23,6 @@ sys.path.append("/usr/local/lib/python2.7/dist-packages")
 import myfunc
 import webserver_common
 import time
-import datetime
 import requests
 import json
 import urllib
