@@ -11,7 +11,7 @@ import os
 import sys
 import myfunc
 rundir = os.path.dirname(os.path.realpath(__file__))
-import datetime
+from datetime import datetime
 from dateutil import parser as dtparser
 from pytz import timezone
 import tabulate
