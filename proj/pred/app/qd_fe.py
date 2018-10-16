@@ -6,6 +6,9 @@
 import os
 import sys
 import site
+from datetime import datetime
+from dateutil import parser as dtparser
+from pytz import timezone
 
 rundir = os.path.dirname(os.path.realpath(__file__))
 webserver_root = os.path.realpath("%s/../../../"%(rundir))
@@ -32,8 +35,8 @@ import numpy
 
 from geoip import geolite2
 import pycountry
-
-os.environ['TZ'] = 'Europe/Stockholm'
+TZ = "Europe/Stockholm"
+os.environ['TZ'] = TZ
 time.tzset()
 
 vip_user_list = [
@@ -259,7 +262,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                 isValidSubmitDate = False
 
             if isValidSubmitDate:
-                current_time = datetime.datetime.now()
+                current_time = datetime.now(timezone(TZ))
                 timeDiff = current_time - submit_date
                 queuetime_in_sec = timeDiff.seconds
             else:
@@ -1157,7 +1160,7 @@ def DeleteOldResult(path_result, path_log):#{{{
                 isValidFinishDate = False
 
             if isValidFinishDate:
-                current_time = datetime.datetime.now()
+                current_time = datetime.now(timezone(TZ))
                 timeDiff = current_time - finish_date
                 if timeDiff.days > g_params['MAX_KEEP_DAYS']:
                     rstdir = "%s/%s"%(path_result, jobid)

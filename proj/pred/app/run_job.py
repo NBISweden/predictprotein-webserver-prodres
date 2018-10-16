@@ -9,7 +9,6 @@ import webserver_common
 import glob
 import hashlib
 import shutil
-import datetime
 import site
 import fcntl
 import json
