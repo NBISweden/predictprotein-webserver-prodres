@@ -19,6 +19,7 @@ import re
 import time
 import sqlite3
 import logging
+import shutil
 import subprocess
 
 FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
