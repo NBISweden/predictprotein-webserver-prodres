@@ -5,7 +5,7 @@ import sys
 import subprocess
 import time
 import myfunc
-import webserver_common
+import webserver_common as webcom
 import glob
 import hashlib
 import shutil
@@ -130,7 +130,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     if hdl.failure:
         isOK = False
     else:
-        webserver_common.WriteDateTimeTagFile(starttagfile, runjob_logfile, runjob_errfile)
+        webcom.WriteDateTimeTagFile(starttagfile, runjob_logfile, runjob_errfile)
         recordList = hdl.readseq()
         cnt = 0
         origpath = os.getcwd()
@@ -265,7 +265,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 cmd += ['--psiblast_outfmt', query_para['psiblast_outfmt']]
 
 
-            (t_success, runtime_in_sec) = webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
+            (t_success, runtime_in_sec) = webcom.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
             aaseqfile = "%s/seq.fa"%(tmp_outpath_this_seq+os.sep+"query_0")
             if not os.path.exists(aaseqfile):
@@ -276,7 +276,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             if os.path.exists(tmp_outpath_this_seq):
                 cmd = ["mv","-f", tmp_outpath_this_seq+os.sep+"query_0", outpath_this_seq]
                 isCmdSuccess = False
-                (isCmdSuccess, t_runtime) = webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
+                (isCmdSuccess, t_runtime) = webcom.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
                 if not 'isKeepTempFile' in query_para or query_para['isKeepTempFile'] == False:
                     try:
@@ -323,11 +323,11 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                     info_this_seq = "%s\t%d\t%s\t%s"%("seq_%d"%origIndex, len(seq), description, seq)
                     resultfile_text_this_seq = "%s/%s"%(outpath_this_seq, "query.result.txt")
-                    #webserver_common.WriteSubconsTextResultFile(resultfile_text_this_seq,
+                    #webcom.WriteSubconsTextResultFile(resultfile_text_this_seq,
                     #        outpath_result, [info_this_seq], runtime_in_sec, g_params['base_www_url'])
                     # create or update the md5 cache
                     # create cache only on the front-end
-                    if webserver_common.IsFrontEndNode(g_params['base_www_url']):
+                    if webcom.IsFrontEndNode(g_params['base_www_url']):
                         md5_key = hashlib.md5(seq+str(query_para)).hexdigest()
                         subfoldername = md5_key[:2]
                         md5_subfolder = "%s/%s"%(path_cache, subfoldername)
@@ -349,7 +349,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
 
                         if os.path.exists(md5_subfolder) and not os.path.exists(cachedir):
                             cmd = ["mv","-f", outpath_this_seq, cachedir]
-                            webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
+                            webcom.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
 
                         if not os.path.exists(outpath_this_seq) and os.path.exists(cachedir):
                             rela_path = os.path.relpath(cachedir, outpath_result) #relative path
@@ -365,7 +365,7 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     if not g_params['isOnlyGetCache'] or len(toRunDict) == 0:
         # now write the text output to a single file
         statfile = "%s/%s"%(outpath_result, "stat.txt")
-        #webserver_common.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
+        #webcom.WriteSubconsTextResultFile(resultfile_text, outpath_result, maplist,
         #        all_runtime_in_sec, g_params['base_www_url'], statfile=statfile)
 
         # now making zip instead (for windows users)
@@ -373,28 +373,28 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
         os.chdir(outpath)
 #             cmd = ["tar", "-czf", tarball, resultpathname]
         cmd = ["zip", "-rq", zipfile, resultpathname]
-        webserver_common.RunCmd(cmd, runjob_logfile, runjob_errfile)
+        webcom.RunCmd(cmd, runjob_logfile, runjob_errfile)
 
         # write finish tag file
         if os.path.exists(finished_seq_file):
-            webserver_common.WriteDateTimeTagFile(finishtagfile, runjob_logfile, runjob_errfile)
+            webcom.WriteDateTimeTagFile(finishtagfile, runjob_logfile, runjob_errfile)
 
         isSuccess = False
         if (os.path.exists(finishtagfile) and os.path.exists(zipfile_fullpath)):
             isSuccess = True
         else:
             isSuccess = False
-            webserver_common.WriteDateTimeTagFile(failedtagfile, runjob_logfile, runjob_errfile)
+            webcom.WriteDateTimeTagFile(failedtagfile, runjob_logfile, runjob_errfile)
 
 
 # send the result to email
 # do not sendmail at the cloud VM
-        if webserver_common.IsFrontEndNode(g_params['base_www_url']) and myfunc.IsValidEmailAddress(email):
+        if webcom.IsFrontEndNode(g_params['base_www_url']) and myfunc.IsValidEmailAddress(email):
             if isSuccess:
                 finish_status = "success"
             else:
                 finish_status = "failed"
-            webserver_common.SendEmail_on_finish(jobid, g_params['base_www_url'],
+            webcom.SendEmail_on_finish(jobid, g_params['base_www_url'],
                     finish_status, name_server="PRODRES", from_email="prodres@prodres.bioinfo.se",
                     to_email=email, contact_email=contact_email,
                     logfile=runjob_logfile, errfile=runjob_errfile)
