@@ -1,0 +1,3 @@
+seq_1	350	None	None	newrun	13.202275	tr|A5JP12|A5JP12_SALTM Membrane protein OS=Salmonella typhimurium GN=ompA PE=3 SV=1
+seq_0	446	None	None	newrun	26.282821	sp|Q61616|DRD1_MOUSE D(1A) dopamine receptor OS=Mus musculus GN=Drd1 PE=1 SV=2
+seq_2	1364	None	None	newrun	34.399973	sp|Q84GK0|EATA_ECOH1 Serine protease EatA OS=Escherichia coli O78:H11 (strain H10407 / ETEC) GN=eatA PE=1 SV=1

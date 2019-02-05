@@ -1,0 +1,1 @@
+{"isKeepTempFile": false, "jackhmmer_bitscore": "25", "jackhmmer_evalue": "", "jackhmmer_iteration": "3", "jackhmmer_threshold_type": "bit-score", "pfamscan_bitscore": "2", "pfamscan_clanoverlap": true, "pfamscan_evalue": "", "psiblast_evalue": "0.1", "psiblast_iteration": "3", "psiblast_outfmt": "0", "second_method": "jackhmmer"}

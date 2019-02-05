@@ -1,0 +1,21 @@
+tmpdir = /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_XsSzt2
+python /big/server/var/www/web_prodres/proj/pred/app/soft/PRODRES/PRODRES/PRODRES.py --input /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_XsSzt2/rst_jeS6Pm/query_0.fa --output /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_XsSzt2/rst_jeS6Pm/seq_0 --pfam-dir /big/server/var/www/web_prodres/proj/pred/app/soft/PRODRES/databases --pfamscan-script /big/server/var/www/web_prodres/misc/PfamScan/pfam_scan.pl --uniprot-db-fasta /big/server/var/www/web_prodres/proj/pred/app/soft/PRODRES/databases/blastdb/uniref90.fasta --verbose --second-search jackhmmer --pfamscan_bitscore 2 --pfamscan_clan-overlap yes --jackhmmer_max_iter 3 --jackhmmer-threshold-type bit-score --jackhmmer_bit-score 25 --psiblast_iter 3 --psiblast_outfmt 0
+workflow:
+
+    #########################################################################################
+    #########                                                                       #########
+    #########                             PRODRES PIPELINE                          #########
+    #########                                                                       #########
+    #########################################################################################
+    
+Beginning Environment testing...
+Ending Environment testing.
+	>>>Sequences found: 1 <<<
+
+Beginning CDR...
+	>Beginning CDR for sequence number 1/1: query_0
+		>end
+Ending CDR.
+
+
+cmdline: mv -f /big/server/var/www/web_prodres/proj/pred/static/result/rst_jeS6Pm/rst_jeS6Pm/seq_0 /big/server/var/www/web_prodres/proj/pred/static/result/cache/39/39152f663563dfbb54ebdd439ffd2a74

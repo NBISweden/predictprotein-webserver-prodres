@@ -1,0 +1,13 @@
+Go to SubmitJobToQueue()
+Entering SubmitJobToQueue()
+Write scriptfile /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_eYTgRI/runjobSPLITrst_9Uz27uSPLIT130.229.48.10SPLITnanjiang.shu@gmail.comSPLIT3.sh
+Getting priority
+priority=672731146
+Entering SubmitSuqJob()
+cmdline: /usr/bin/suq -b /scratch run -d /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_eYTgRI -p 672731146 /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_eYTgRI/runjobSPLITrst_9Uz27uSPLIT130.229.48.10SPLITnanjiang.shu@gmail.comSPLIT3.sh
+
+run cmd: cnttry = 0, MAX_TRY=5
+Leaving SubmitSuqJob() with success
+
+cmdline: /big/server/var/www/web_prodres/env/bin/python2.7 /big/server/var/www/web_prodres/proj/pred/app/submit_job_to_queue.py -nseq 3 -nseq-this-user 1 -jobid rst_9Uz27u -outpath /big/server/var/www/web_prodres/proj/pred/static/result/rst_9Uz27u -datapath /big/server/var/www/web_prodres/proj/pred/static/tmp/tmp_eYTgRI -baseurl http://prodres.bioinfo.se -email nanjiang.shu@gmail.com -host 130.229.48.10 -only-get-cache
+
