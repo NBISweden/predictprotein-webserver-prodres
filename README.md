@@ -11,7 +11,7 @@
     domains, while, at the same time, obtaining virtually the same profile as with
     a standard PSI-BLAST or jackhmmer search.
 
-    The web-server is developed with Django (>=1.6.4)
+    The web-server is developed with Django (1.11.18)
 
     This software is open source and licensed under the GPL v3 license (a copy
     of the license is included in the repository)

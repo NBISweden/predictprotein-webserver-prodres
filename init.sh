@@ -70,3 +70,19 @@ exec_cmd "sudo chown $user:$group $logfile_submit"
 if [ ! -f $rundir/proj/settings.py -a ! -L $rundir/proj/settings.py ];then
     pushd $rundir/proj; ln -s pro_settings.py settings.py; popd;
 fi
+
+# create example result
+example_folder_list="
+example_multiseq_jackhmmer
+example_multiseq_psiblast
+example_oneseq_jackhmmer
+example_oneseq_psiblast
+"
+pushd $rundir/proj/pred/static/result
+
+for item in $example_folder_list; do
+    if [ ! -d $item ]; then
+        sudo ln -s ../download/example/$item  .
+    fi
+done
+popd
