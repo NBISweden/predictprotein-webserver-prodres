@@ -1772,10 +1772,8 @@ def RunStatistics(path_result, path_log):#{{{
 #}}}
 def ArchiveLogFile():# {{{
     """Archive some of the log files if they are too big"""
-    flist = [gen_logfile, gen_errfile,
-            "%s/restart_qd_fe.cgi.log"%(path_log),
+    flist = [gen_logfile, gen_errfile, "%s/restart_qd_fe.cgi.log"%(path_log),
             "%s/debug.log"%(path_log)]
-
     for f in flist:
         if os.path.exists(f):
             myfunc.ArchiveFile(f, threshold_logfilesize)
