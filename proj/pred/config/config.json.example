@@ -1,0 +1,11 @@
+{
+    "qd_fe":
+    {
+        "DEBUG": false,
+        "DEBUG_NO_SUBMIT":false,
+        "DEBUG_CACHE": false,
+        "MAX_SUBMIT_JOB_PER_NODE": 10
+
+    }
+}
+
