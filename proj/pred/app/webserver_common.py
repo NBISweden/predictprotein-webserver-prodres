@@ -24,6 +24,10 @@ import subprocess
 
 FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 TZ = "Europe/Stockholm"
+basedir = os.path.realpath("%s/.."%(rundir)) # path of the application, i.e. pred/
+path_log = "%s/static/log"%(basedir)
+path_stat = "%s/stat"%(path_log)
+path_result = "%s/static/result"%(basedir)
 
 def GetLocDef(predfile):#{{{
     """
@@ -98,6 +102,7 @@ def RunCmd(cmd, logfile, errfile, verbose=False):# {{{
 
     return (isCmdSuccess, runtime_in_sec)
 # }}}
+
 def datetime_str_to_epoch(date_str):# {{{
     """convert the datetime in string to epoch
     The string of datetime may with or without the zone info
@@ -114,6 +119,140 @@ def datetime_str_to_time(date_str):# {{{
         dt = dt.replace(tzinfo=timezone('UTC'))
     return dt
 # }}}
+
+def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
+        runtime_in_sec, base_www_url, statfile=""):
+    try:
+        methodlist = ['TOPCONS', 'OCTOPUS', 'Philius', 'PolyPhobius', 'SCAMPI',
+                'SPOCTOPUS', 'Homology']
+        fpout = open(outfile, "w")
+
+        fpstat = None
+        num_TMPro_cons = 0
+        num_TMPro_any = 0
+        num_nonTMPro_cons = 0
+        num_nonTMPro_any = 0
+        num_SPPro_cons = 0
+        num_SPPro_any = 0
+
+        if statfile != "":
+            fpstat = open(statfile, "w")
+
+        date_str = time.strftime(FORMAT_DATETIME)
+        print >> fpout, "##############################################################################"
+        print >> fpout, "TOPCONS2 result file"
+        print >> fpout, "Generated from %s at %s"%(base_www_url, date_str)
+        print >> fpout, "Total request time: %.1f seconds."%(runtime_in_sec)
+        print >> fpout, "##############################################################################"
+        cnt = 0
+        for line in maplist:
+            strs = line.split('\t')
+            subfoldername = strs[0]
+            length = int(strs[1])
+            desp = strs[2]
+            seq = strs[3]
+            print >> fpout, "Sequence number: %d"%(cnt+1)
+            print >> fpout, "Sequence name: %s"%(desp)
+            print >> fpout, "Sequence length: %d aa."%(length)
+            print >> fpout, "Sequence:\n%s\n\n"%(seq)
+
+            is_TM_cons = False
+            is_TM_any = False
+            is_nonTM_cons = True
+            is_nonTM_any = True
+            is_SP_cons = False
+            is_SP_any = False
+
+            for i in xrange(len(methodlist)):
+                method = methodlist[i]
+                seqid = ""
+                seqanno = ""
+                top = ""
+                if method == "TOPCONS":
+                    topfile = "%s/%s/%s/topcons.top"%(outpath_result, subfoldername, "Topcons")
+                elif method == "Philius":
+                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, "philius")
+                elif method == "SCAMPI":
+                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, method+"_MSA")
+                else:
+                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, method)
+                if os.path.exists(topfile):
+                    (seqid, seqanno, top) = ReadSingleFasta(topfile)
+                else:
+                    top = ""
+                if top == "":
+                    #top = "***No topology could be produced with this method topfile=%s***"%(topfile)
+                    top = "***No topology could be produced with this method***"
+
+                if fpstat != None:
+                    if top.find('M') >= 0:
+                        is_TM_any = True
+                        is_nonTM_any = False
+                        if method == "TOPCONS":
+                            is_TM_cons = True
+                            is_nonTM_cons = False
+                    if top.find('S') >= 0:
+                        is_SP_any = True
+                        if method == "TOPCONS":
+                            is_SP_cons = True
+
+                if method == "Homology":
+                    showtext_homo = method
+                    if seqid != "":
+                        showtext_homo = seqid
+                    print >> fpout, "%s:\n%s\n\n"%(showtext_homo, top)
+                else:
+                    print >> fpout, "%s predicted topology:\n%s\n\n"%(method, top)
+
+
+            if fpstat:
+                num_TMPro_cons += is_TM_cons
+                num_TMPro_any += is_TM_any
+                num_nonTMPro_cons += is_nonTM_cons
+                num_nonTMPro_any += is_nonTM_any
+                num_SPPro_cons += is_SP_cons
+                num_SPPro_any += is_SP_any
+
+            dgfile = "%s/%s/dg.txt"%(outpath_result, subfoldername)
+            dg_content = ""
+            if os.path.exists(dgfile):
+                dg_content = ReadFile(dgfile)
+            lines = dg_content.split("\n")
+            dglines = []
+            for line in lines:
+                if line and line[0].isdigit():
+                    dglines.append(line)
+            if len(dglines)>0:
+                print >> fpout,  "\nPredicted Delta-G-values (kcal/mol) "\
+                        "(left column=sequence position; right column=Delta-G)\n"
+                print >> fpout, "\n".join(dglines)
+
+            reliability_file = "%s/%s/Topcons/reliability.txt"%(outpath_result, subfoldername)
+            reliability = ""
+            if os.path.exists(reliability_file):
+                reliability = ReadFile(reliability_file)
+            if reliability != "":
+                print >> fpout, "\nPredicted TOPCONS reliability (left "\
+                        "column=sequence position; right column=reliability)\n"
+                print >> fpout, reliability
+            print >> fpout, "##############################################################################"
+            cnt += 1
+
+        if fpstat:
+            out_str_list = []
+            out_str_list.append("num_TMPro_cons %d"% num_TMPro_cons)
+            out_str_list.append("num_TMPro_any %d"% num_TMPro_any)
+            out_str_list.append("num_nonTMPro_cons %d"% num_nonTMPro_cons)
+            out_str_list.append("num_nonTMPro_any %d"% num_nonTMPro_any)
+            out_str_list.append("num_SPPro_cons %d"% num_SPPro_cons)
+            out_str_list.append("num_SPPro_any %d"% num_SPPro_any)
+            fpstat.write("%s"%("\n".join(out_str_list)))
+
+            fpstat.close()
+
+    except IOError:
+        print "Failed to write to file %s"%(outfile)
+#}}}
 def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
     if not os.path.exists(outfile):
         date_str = time.strftime(FORMAT_DATETIME)
@@ -125,6 +264,7 @@ def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
             msg = "Failed to write to file %s with message: \"%s\""%(outfile, str(e))
             myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  errfile, "a", True)
 # }}}
+
 def ValidateParameter_PRODRES(query_para):#{{{
     """Validate the input parameters for PRODRES
     query_para is a dictionary
@@ -365,6 +505,101 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
     seqinfo['errinfo'] = seqinfo['errinfo_br'] + seqinfo['errinfo_content']
     return filtered_seq
 #}}}
+def GetJobCounter(info): #{{{
+# get job counter for the client_ip
+# get the table from runlog, 
+# for queued or running jobs, if source=web and numseq=1, check again the tag file in
+# each individual folder, since they are queued locally
+    logfile_query = info['divided_logfile_query']
+    logfile_finished_jobid = info['divided_logfile_finished_jobid']
+    isSuperUser = info['isSuperUser']
+    client_ip = info['client_ip']
+    maxdaystoshow = info['MAX_DAYS_TO_SHOW']
+
+    jobcounter = {}
+
+    jobcounter['queued'] = 0
+    jobcounter['running'] = 0
+    jobcounter['finished'] = 0
+    jobcounter['failed'] = 0
+    jobcounter['nojobfolder'] = 0 #of which the folder jobid does not exist
+
+    jobcounter['queued_idlist'] = []
+    jobcounter['running_idlist'] = []
+    jobcounter['finished_idlist'] = []
+    jobcounter['failed_idlist'] = []
+    jobcounter['nojobfolder_idlist'] = []
+
+    hdl = myfunc.ReadLineByBlock(logfile_query)
+    if hdl.failure:
+        return jobcounter
+    else:
+        finished_job_dict = myfunc.ReadFinishedJobLog(logfile_finished_jobid)
+        finished_jobid_set = set([])
+        failed_jobid_set = set([])
+        for jobid in finished_job_dict:
+            status = finished_job_dict[jobid][0]
+            rstdir = "%s/%s"%(path_result, jobid)
+            if status == "Finished":
+                finished_jobid_set.add(jobid)
+            elif status == "Failed":
+                failed_jobid_set.add(jobid)
+        lines = hdl.readlines()
+        current_time = datetime.now(timezone(TZ))
+        while lines != None:
+            for line in lines:
+                strs = line.split("\t")
+                if len(strs) < 7:
+                    continue
+                ip = strs[2]
+                if not isSuperUser and ip != client_ip:
+                    continue
+
+                submit_date_str = strs[0]
+                isValidSubmitDate = True
+                try:
+                    submit_date = datetime_str_to_time(submit_date_str)
+                except ValueError:
+                    isValidSubmitDate = False
+
+                if not isValidSubmitDate:
+                    continue
+
+                diff_date = current_time - submit_date
+                if diff_date.days > maxdaystoshow:
+                    continue
+                jobid = strs[1]
+                rstdir = "%s/%s"%(path_result, jobid)
+
+                if jobid in finished_jobid_set:
+                    jobcounter['finished'] += 1
+                    jobcounter['finished_idlist'].append(jobid)
+                elif jobid in failed_jobid_set:
+                    jobcounter['failed'] += 1
+                    jobcounter['failed_idlist'].append(jobid)
+                else:
+                    finishtagfile = "%s/%s"%(rstdir, "runjob.finish")
+                    failtagfile = "%s/%s"%(rstdir, "runjob.failed")
+                    starttagfile = "%s/%s"%(rstdir, "runjob.start")
+                    if not os.path.exists(rstdir):
+                        jobcounter['nojobfolder'] += 1
+                        jobcounter['nojobfolder_idlist'].append(jobid)
+                    elif os.path.exists(failtagfile):
+                        jobcounter['failed'] += 1
+                        jobcounter['failed_idlist'].append(jobid)
+                    elif os.path.exists(finishtagfile):
+                        jobcounter['finished'] += 1
+                        jobcounter['finished_idlist'].append(jobid)
+                    elif os.path.exists(starttagfile):
+                        jobcounter['running'] += 1
+                        jobcounter['running_idlist'].append(jobid)
+                    else:
+                        jobcounter['queued'] += 1
+                        jobcounter['queued_idlist'].append(jobid)
+            lines = hdl.readlines()
+        hdl.close()
+    return jobcounter
+#}}}
 def SendEmail_on_finish(jobid, base_www_url, finish_status, name_server, from_email, to_email, contact_email, logfile="", errfile=""):# {{{
     """Send notification email to the user for the web-server, the name
     of the web-server is specified by the var 'name_server'
@@ -415,6 +650,7 @@ Attached below is the error message:
     else:
         return 0
 # }}}
+
 def DeleteOldResult(path_result, path_log, logfile, MAX_KEEP_DAYS=180):#{{{
     """Delete jobdirs that are finished > MAX_KEEP_DAYS
     """

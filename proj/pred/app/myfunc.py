@@ -18,6 +18,8 @@ import requests
 import gzip
 import time
 import datetime
+
+FORMAT_DATETIME = "%Y-%m-%d %H:%M:%S %Z"
 GAP = "-"
 BLOCK_SIZE = 100000 #set a good value for reading text file by block reading
 
@@ -2406,139 +2408,6 @@ def GetSuqPriority(numseq_this_user):#{{{
 
     return prio
 #}}}
-def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
-        runtime_in_sec, base_www_url, statfile=""):
-    try:
-        methodlist = ['TOPCONS', 'OCTOPUS', 'Philius', 'PolyPhobius', 'SCAMPI',
-                'SPOCTOPUS', 'Homology']
-        fpout = open(outfile, "w")
-
-        fpstat = None
-        num_TMPro_cons = 0
-        num_TMPro_any = 0
-        num_nonTMPro_cons = 0
-        num_nonTMPro_any = 0
-        num_SPPro_cons = 0
-        num_SPPro_any = 0
-
-        if statfile != "":
-            fpstat = open(statfile, "w")
-
-        date_str = time.strftime("%Y-%m-%d %H:%M:%S %Z")
-        print >> fpout, "##############################################################################"
-        print >> fpout, "TOPCONS2 result file"
-        print >> fpout, "Generated from %s at %s"%(base_www_url, date_str)
-        print >> fpout, "Total request time: %.1f seconds."%(runtime_in_sec)
-        print >> fpout, "##############################################################################"
-        cnt = 0
-        for line in maplist:
-            strs = line.split('\t')
-            subfoldername = strs[0]
-            length = int(strs[1])
-            desp = strs[2]
-            seq = strs[3]
-            print >> fpout, "Sequence number: %d"%(cnt+1)
-            print >> fpout, "Sequence name: %s"%(desp)
-            print >> fpout, "Sequence length: %d aa."%(length)
-            print >> fpout, "Sequence:\n%s\n\n"%(seq)
-
-            is_TM_cons = False
-            is_TM_any = False
-            is_nonTM_cons = True
-            is_nonTM_any = True
-            is_SP_cons = False
-            is_SP_any = False
-
-            for i in xrange(len(methodlist)):
-                method = methodlist[i]
-                seqid = ""
-                seqanno = ""
-                top = ""
-                if method == "TOPCONS":
-                    topfile = "%s/%s/%s/topcons.top"%(outpath_result, subfoldername, "Topcons")
-                elif method == "Philius":
-                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, "philius")
-                elif method == "SCAMPI":
-                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, method+"_MSA")
-                else:
-                    topfile = "%s/%s/%s/query.top"%(outpath_result, subfoldername, method)
-                if os.path.exists(topfile):
-                    (seqid, seqanno, top) = ReadSingleFasta(topfile)
-                else:
-                    top = ""
-                if top == "":
-                    #top = "***No topology could be produced with this method topfile=%s***"%(topfile)
-                    top = "***No topology could be produced with this method***"
-
-                if fpstat != None:
-                    if top.find('M') >= 0:
-                        is_TM_any = True
-                        is_nonTM_any = False
-                        if method == "TOPCONS":
-                            is_TM_cons = True
-                            is_nonTM_cons = False
-                    if top.find('S') >= 0:
-                        is_SP_any = True
-                        if method == "TOPCONS":
-                            is_SP_cons = True
-
-                if method == "Homology":
-                    showtext_homo = method
-                    if seqid != "":
-                        showtext_homo = seqid
-                    print >> fpout, "%s:\n%s\n\n"%(showtext_homo, top)
-                else:
-                    print >> fpout, "%s predicted topology:\n%s\n\n"%(method, top)
-
-
-            if fpstat:
-                num_TMPro_cons += is_TM_cons
-                num_TMPro_any += is_TM_any
-                num_nonTMPro_cons += is_nonTM_cons
-                num_nonTMPro_any += is_nonTM_any
-                num_SPPro_cons += is_SP_cons
-                num_SPPro_any += is_SP_any
-
-            dgfile = "%s/%s/dg.txt"%(outpath_result, subfoldername)
-            dg_content = ""
-            if os.path.exists(dgfile):
-                dg_content = ReadFile(dgfile)
-            lines = dg_content.split("\n")
-            dglines = []
-            for line in lines:
-                if line and line[0].isdigit():
-                    dglines.append(line)
-            if len(dglines)>0:
-                print >> fpout,  "\nPredicted Delta-G-values (kcal/mol) "\
-                        "(left column=sequence position; right column=Delta-G)\n"
-                print >> fpout, "\n".join(dglines)
-
-            reliability_file = "%s/%s/Topcons/reliability.txt"%(outpath_result, subfoldername)
-            reliability = ""
-            if os.path.exists(reliability_file):
-                reliability = ReadFile(reliability_file)
-            if reliability != "":
-                print >> fpout, "\nPredicted TOPCONS reliability (left "\
-                        "column=sequence position; right column=reliability)\n"
-                print >> fpout, reliability
-            print >> fpout, "##############################################################################"
-            cnt += 1
-
-        if fpstat:
-            out_str_list = []
-            out_str_list.append("num_TMPro_cons %d"% num_TMPro_cons)
-            out_str_list.append("num_TMPro_any %d"% num_TMPro_any)
-            out_str_list.append("num_nonTMPro_cons %d"% num_nonTMPro_cons)
-            out_str_list.append("num_nonTMPro_any %d"% num_nonTMPro_any)
-            out_str_list.append("num_SPPro_cons %d"% num_SPPro_cons)
-            out_str_list.append("num_SPPro_any %d"% num_SPPro_any)
-            fpstat.write("%s"%("\n".join(out_str_list)))
-
-            fpstat.close()
-
-    except IOError:
-        print "Failed to write to file %s"%(outfile)
-#}}}
 def Sendmail(from_email, to_email, subject, bodytext):#{{{
     sendmail_location = "/usr/sbin/sendmail" # sendmail location
     p = os.popen("%s -t" % sendmail_location, "w")
@@ -2576,13 +2445,16 @@ def ReadFinishedJobLog(infile, status=""):#{{{
                         jobname = strs[2]
                         ip = strs[3]
                         email = strs[4]
-                        numseq_str = strs[5]
+                        try:
+                            numseq = int(strs[5])
+                        except:
+                            numseq = 1
                         method_submission = strs[6]
                         submit_date_str = strs[7]
                         start_date_str = strs[8]
                         finish_date_str = strs[9]
                         dt[jobid] = [status_this_job, jobname, ip, email,
-                                numseq_str, method_submission, submit_date_str,
+                                numseq, method_submission, submit_date_str,
                                 start_date_str, finish_date_str]
             lines = hdl.readlines()
         hdl.close()
@@ -2643,7 +2515,6 @@ def ReadNews(infile):#{{{
         newsList = []
         pos = 0
         sizebuff = len(buff)
-        fmt = "%Y-%m-%d %H:%M:%S %Z"
         while pos < sizebuff:
             b = buff[pos:].find("\n<DATE>")
             if b >= 0:
@@ -2683,7 +2554,7 @@ def ReadNews(infile):#{{{
                 content = " ".join(content_li)
                 if date_str != "" and title != "":
                     try:
-                        st_time = time.strptime(date_str, fmt)
+                        st_time = time.strptime(date_str, FORMAT_DATETIME)
                         epoch_time = time.mktime(st_time)
                     except ValueError:
                         epoch_time = 0
