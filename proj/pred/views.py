@@ -307,7 +307,6 @@ def submit_seq(request):#{{{
                 query['BASEURL'] = g_params['BASEURL']
 
                 # start the qd_fe if not, in the background
-#                 cmd = [qd_fe_scriptfile]
                 base_www_url = "http://" + request.META['HTTP_HOST']
                 if webcom.IsFrontEndNode(base_www_url): #run the daemon only at the frontend
                     cmd = "nohup %s %s &"%(python_exec, qd_fe_scriptfile)
