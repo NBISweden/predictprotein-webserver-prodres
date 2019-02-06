@@ -376,9 +376,7 @@ def RunQuery(request, query):#{{{
     query['base_www_url'] = base_www_url
 
 
-    # for single sequence job submitted via web interface, submit to local
-    # queue
-    if query['numseq'] <= 1: #single sequence jobs submitted via web interface queued in the front-end server
+    if query['numseq'] < 0: #  do not submit job to the local queue
         query['numseq_this_user'] = 1
         SubmitQueryToLocalQueue(query, tmpdir, rstdir, isOnlyGetCache=False)
     else: #all other jobs are submitted to the frontend with isOnlyGetCache=True
