@@ -16,3 +16,9 @@ log/
 md5/
 env/
 bak.env/
+
+*.bak
+
+proj/pred/config/computenode.txt
+proj/pred/config/config.json
+proj/settings.py
