@@ -50,7 +50,7 @@ def GetLocDef(predfile):#{{{
                 if strs0[1] == "LOC_DEF":
                     loc_def = strs1[1]
                     dt_score = {}
-                    for i in xrange(2, len(strs0)):
+                    for i in range(2, len(strs0)):
                         dt_score[strs0[i]] = strs1[i]
                     if loc_def in dt_score:
                         loc_def_score = dt_score[loc_def]
@@ -91,7 +91,7 @@ def RunCmd(cmd, logfile, errfile, verbose=False):# {{{
             msg = "workflow: %s"%(cmdline)
             myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  logfile, "a", True)
         isCmdSuccess = True
-    except subprocess.CalledProcessError, e:
+    except subprocess.CalledProcessError as e:
         msg = "cmdline: %s\nFailed with message \"%s\""%(cmdline, str(e))
         myfunc.WriteFile("[%s] %s\n"%(date_str, msg),  errfile, "a", True)
         isCmdSuccess = False
@@ -139,11 +139,11 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
             fpstat = open(statfile, "w")
 
         date_str = time.strftime(FORMAT_DATETIME)
-        print >> fpout, "##############################################################################"
-        print >> fpout, "TOPCONS2 result file"
-        print >> fpout, "Generated from %s at %s"%(base_www_url, date_str)
-        print >> fpout, "Total request time: %.1f seconds."%(runtime_in_sec)
-        print >> fpout, "##############################################################################"
+        print("##############################################################################", file=fpout)
+        print("TOPCONS2 result file", file=fpout)
+        print("Generated from %s at %s"%(base_www_url, date_str), file=fpout)
+        print("Total request time: %.1f seconds."%(runtime_in_sec), file=fpout)
+        print("##############################################################################", file=fpout)
         cnt = 0
         for line in maplist:
             strs = line.split('\t')
@@ -151,10 +151,10 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
             length = int(strs[1])
             desp = strs[2]
             seq = strs[3]
-            print >> fpout, "Sequence number: %d"%(cnt+1)
-            print >> fpout, "Sequence name: %s"%(desp)
-            print >> fpout, "Sequence length: %d aa."%(length)
-            print >> fpout, "Sequence:\n%s\n\n"%(seq)
+            print("Sequence number: %d"%(cnt+1), file=fpout)
+            print("Sequence name: %s"%(desp), file=fpout)
+            print("Sequence length: %d aa."%(length), file=fpout)
+            print("Sequence:\n%s\n\n"%(seq), file=fpout)
 
             is_TM_cons = False
             is_TM_any = False
@@ -163,7 +163,7 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
             is_SP_cons = False
             is_SP_any = False
 
-            for i in xrange(len(methodlist)):
+            for i in range(len(methodlist)):
                 method = methodlist[i]
                 seqid = ""
                 seqanno = ""
@@ -200,9 +200,9 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
                     showtext_homo = method
                     if seqid != "":
                         showtext_homo = seqid
-                    print >> fpout, "%s:\n%s\n\n"%(showtext_homo, top)
+                    print("%s:\n%s\n\n"%(showtext_homo, top), file=fpout)
                 else:
-                    print >> fpout, "%s predicted topology:\n%s\n\n"%(method, top)
+                    print("%s predicted topology:\n%s\n\n"%(method, top), file=fpout)
 
 
             if fpstat:
@@ -223,19 +223,19 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
                 if line and line[0].isdigit():
                     dglines.append(line)
             if len(dglines)>0:
-                print >> fpout,  "\nPredicted Delta-G-values (kcal/mol) "\
-                        "(left column=sequence position; right column=Delta-G)\n"
-                print >> fpout, "\n".join(dglines)
+                print("\nPredicted Delta-G-values (kcal/mol) "\
+                        "(left column=sequence position; right column=Delta-G)\n", file=fpout)
+                print("\n".join(dglines), file=fpout)
 
             reliability_file = "%s/%s/Topcons/reliability.txt"%(outpath_result, subfoldername)
             reliability = ""
             if os.path.exists(reliability_file):
                 reliability = ReadFile(reliability_file)
             if reliability != "":
-                print >> fpout, "\nPredicted TOPCONS reliability (left "\
-                        "column=sequence position; right column=reliability)\n"
-                print >> fpout, reliability
-            print >> fpout, "##############################################################################"
+                print("\nPredicted TOPCONS reliability (left "\
+                        "column=sequence position; right column=reliability)\n", file=fpout)
+                print(reliability, file=fpout)
+            print("##############################################################################", file=fpout)
             cnt += 1
 
         if fpstat:
@@ -251,7 +251,7 @@ def WriteTOPCONSTextResultFile(outfile, outpath_result, maplist,#{{{
             fpstat.close()
 
     except IOError:
-        print "Failed to write to file %s"%(outfile)
+        print("Failed to write to file %s"%(outfile))
 #}}}
 def WriteDateTimeTagFile(outfile, logfile, errfile):# {{{
     if not os.path.exists(outfile):
@@ -417,7 +417,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 # checking for bad sequences in the query
 
     if seqinfo['isValidSeq']:
-        for i in xrange(numseq):
+        for i in range(numseq):
             seq = seqRecordList[i][2].strip()
             anno = seqRecordList[i][1].strip().replace('\t', ' ')
             seqid = seqRecordList[i][0].strip()
@@ -425,7 +425,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
             seq = re.sub("[\s\n\r\t]", '', seq)
             li1 = [m.start() for m in re.finditer("[^ABCDEFGHIKLMNPQRSTUVWYZX*-]", seq)]
             if len(li1) > 0:
-                for j in xrange(len(li1)):
+                for j in range(len(li1)):
                     msg = "Bad letter for amino acid in sequence %s (SeqNo. %d) "\
                             "at position %d (letter: '%s')"%(seqid, i+1,
                                     li1[j]+1, seq[li1[j]])
@@ -444,7 +444,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 #    *, - will be deleted
     if seqinfo['isValidSeq']:
         li_newseq = []
-        for i in xrange(numseq):
+        for i in range(numseq):
             seq = seqRecordList[i][2].strip()
             anno = seqRecordList[i][1].strip()
             seqid = seqRecordList[i][0].strip()
@@ -455,7 +455,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 
             li1 = [m.start() for m in re.finditer("[BZ]", seq)]
             if len(li1) > 0:
-                for j in xrange(len(li1)):
+                for j in range(len(li1)):
                     msg = "Amino acid in sequence %s (SeqNo. %d) at position %d "\
                             "(letter: '%s') has been replaced by 'X'"%(seqid,
                                     i+1, li1[j]+1, seq[li1[j]])
@@ -464,7 +464,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 
             li1 = [m.start() for m in re.finditer("[U]", seq)]
             if len(li1) > 0:
-                for j in xrange(len(li1)):
+                for j in range(len(li1)):
                     msg = "Amino acid in sequence %s (SeqNo. %d) at position %d "\
                             "(letter: '%s') has been replaced by 'C'"%(seqid,
                                     i+1, li1[j]+1, seq[li1[j]])
@@ -473,7 +473,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 
             li1 = [m.start() for m in re.finditer("[*]", seq)]
             if len(li1) > 0:
-                for j in xrange(len(li1)):
+                for j in range(len(li1)):
                     msg = "Translational stop in sequence %s (SeqNo. %d) at position %d "\
                             "(letter: '%s') has been deleted"%(seqid,
                                     i+1, li1[j]+1, seq[li1[j]])
@@ -482,7 +482,7 @@ def ValidateSeq(rawseq, seqinfo, g_params):#{{{
 
             li1 = [m.start() for m in re.finditer("[-]", seq)]
             if len(li1) > 0:
-                for j in xrange(len(li1)):
+                for j in range(len(li1)):
                     msg = "Gap in sequence %s (SeqNo. %d) at position %d "\
                             "(letter: '%s') has been deleted"%(seqid,
                                     i+1, li1[j]+1, seq[li1[j]])
