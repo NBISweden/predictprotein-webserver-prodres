@@ -4,10 +4,10 @@ Shared settings
 Django settings for the project 'proj'
 
 For more information on this file, see
-https://docs.djangoproject.com/en/1.11/topics/settings/
+https://docs.djangoproject.com/en/2.2/topics/settings/
 
 For the full list of settings and their values, see
-https://docs.djangoproject.com/en/1.11/ref/settings/
+https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
@@ -25,12 +25,11 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'djangojs',
-    'eztables',
-    'proj.pred'
+    'proj.pred',
 )
 
-MIDDLEWARE_CLASSES = (
+MIDDLEWARE = (
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -46,7 +45,6 @@ WSGI_APPLICATION = 'proj.wsgi.application'
 LOGIN_REDIRECT_URL = '/pred'
 LOGOUT_REDIRECT_URL = '/pred/login'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.11/ref/settings/#databases
 
@@ -56,6 +54,7 @@ DATABASES = {
         'NAME': os.path.join(PARENT_DIR, 'db.sqlite3'),
     },
 }
+
 TEMPLATES = [ 
     {   
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -76,57 +75,45 @@ TEMPLATES = [
     },  
 ]
 
+AUTH_PASSWORD_VALIDATORS = [
+    {
+        'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',
+    },
+    {
+        'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
+    },
+]
+
 # LOGGING configuration
 LOGGING = {
-        'version': 1,
-        'disable_existing_loggers': False,
-        'formatters':{
-            'simple':{
-                'format': "[%(asctime)s - %(name)s - %(levelname)s]: %(message)s"
-                },
-            },
-        'handlers': {
-            'file_debug': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'simple',
-                'filename': "%s/%s/%s/%s/debug.log"%(BASE_DIR,"pred", "static", "log"),
-                },
-            'file_view': {
-                'level': 'DEBUG',
-                'class': 'logging.handlers.RotatingFileHandler',
-                'formatter': 'simple',
-                'filename': "%s/%s/%s/%s/views.log"%(BASE_DIR,"pred", "static", "log"),
-                },
-            },
-        'loggers': {
-            'django.request': {
-                'handlers': ['file_debug'],
-                'level': 'DEBUG',
-                'propagate': True,
-                },
-            'root': {
-                'handlers': ['file_debug'],
-                'level': 'DEBUG',
-                'propagate': True,
-                },
-            'proj.pred.views': {
-                'handlers': ['file_view'],
-                'level': 'DEBUG',
-                'propagate': True,
-                },
-            'proj.pred.app': {
-                'handlers': ['file_debug'],
-                'level': 'DEBUG',
-                'propagate': True,
-                },
-            },
-        }
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': "%s/%s/%s/%s/debug.log"%(BASE_DIR,"pred", "static", "log"),
+        },
+    },
+    'loggers': {
+        'django.request': {
+            'handlers': ['file'],
+            'level': 'DEBUG',
+            'propagate': True,
+        },
+    },
+}
 logging.basicConfig(level=logging.INFO)
-#logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
+logging.getLogger('spyne.protocol.xml').setLevel(logging.DEBUG)
 
 # Internationalization
-# https://docs.djangoproject.com/en/1.11/topics/i18n/
+# https://docs.djangoproject.com/en/2.2/topics/i18n/
 
 LANGUAGE_CODE = 'en-us'
 
@@ -140,8 +127,9 @@ USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/1.11/howto/static-files/
+# https://docs.djangoproject.com/en/2.2/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = "%s/pred/static"%(BASE_DIR)
 SUPER_USER_LIST = ["admin","nanjiang", "njshu"]
 
