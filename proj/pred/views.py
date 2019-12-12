@@ -17,9 +17,8 @@ progname =  os.path.basename(__file__)
 rootname_progname = os.path.splitext(progname)[0]
 path_app = "%s/app"%(SITE_ROOT)
 sys.path.append(path_app)
-import myfunc
-import webserver_common as webcom
-
+from libpredweb import myfunc
+from libpredweb import webserver_common as webcom
 
 logger = logging.getLogger(__name__)
 
