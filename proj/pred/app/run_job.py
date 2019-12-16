@@ -4,8 +4,8 @@ import os
 import sys
 import subprocess
 import time
-import myfunc
-import webserver_common as webcom
+from libpredweb import myfunc
+from libpredweb import webserver_common as webcom
 import glob
 import hashlib
 import shutil
@@ -33,9 +33,12 @@ runscript = "%s/%s"%(rundir, "soft/PRODRES/PRODRES/PRODRES.py")
 #runscript = "%s/%s"%(rundir, "soft/dummyrun.sh")
 
 basedir = os.path.realpath("%s/.."%(rundir)) # path of the application, i.e. pred/
-path_md5cache = "%s/static/md5"%(basedir)
 path_cache = "%s/static/result/cache"%(basedir)
 path_result = "%s/static/result/"%(basedir)
+path_log = "%s/static/log"%(basedir)
+finished_date_db = "%s/cached_job_finished_date.sqlite3"%(path_log)
+
+
 gen_errfile = "%s/static/log/%s.err"%(basedir, progname)
 gen_logfile = "%s/static/log/%s.log"%(basedir, progname)
 
@@ -45,7 +48,6 @@ vip_user_list = [
         ]
 
 # note that here the url should be without http://
-
 
 usage_short="""
 Usage: %s seqfile_in_fasta 
@@ -77,7 +79,6 @@ def PrintHelp(fpout=sys.stdout):#{{{
 
 def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
     all_begin_time = time.time()
-
 
     rootname = os.path.basename(os.path.splitext(infile)[0])
     starttagfile   = "%s/runjob.start"%(outpath)
@@ -115,7 +116,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             msg = "Failed to create folder %s"%(folder)
             myfunc.WriteFile(msg+"\n", gen_errfile, "a")
             return 1
-
     try:
         open(finished_seq_file, 'w').close()
     except:
@@ -153,23 +153,28 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 maplist_simple.append("%s\t%d\t%s"%("seq_%d"%cnt, len(rd.seq),
                     rd.description))
                 if not g_params['isForceRun']:
-                    md5_key = hashlib.md5(rd.seq+str(query_para)).hexdigest()
+                    md5_key = hashlib.md5((rd.seq+str(query_para)).encode('utf-8')).hexdigest()
                     subfoldername = md5_key[:2]
                     cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
-                    if os.path.exists(cachedir):
-                        # create a symlink to the cache
-                        rela_path = os.path.relpath(cachedir, outpath_result) #relative path
-                        os.chdir(outpath_result)
-                        os.symlink(rela_path, subfoldername_this_seq)
+                    zipfile_cache = cachedir + ".zip"
+
+                    if os.path.exists(cachedir) or os.path.exists(zipfile_cache):
+                        if os.path.exists(cachedir):
+                            try:
+                                shutil.copytree(cachedir, outpath_this_seq)
+                            except Exception as e:
+                                msg = "Failed to copytree  %s -> %s"%(cachedir, outpath_this_seq)
+                                date_str = time.strftime(FORMAT_DATETIME)
+                                myfunc.WriteFile("[%s] %s with errmsg=%s\n"%(date_str, 
+                                    msg, str(e)), runjob_errfile, "a")
+                        elif os.path.exists(zipfile_cache):
+                            cmd = ["unzip", zipfile_cache, "-d", outpath_result]
+                            webcom.RunCmd(cmd, runjob_logfile, runjob_errfile)
+                            shutil.move("%s/%s"%(outpath_result, md5_key), outpath_this_seq)
 
                         if os.path.exists(outpath_this_seq):
-                            runtime = 0.0 #in seconds
-                            extItem1 = None
-                            extItem2 = None
-                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                            info_finish = [ "seq_%d"%cnt, str(len(rd.seq)),
-                                    str(extItem1), str(extItem2),
-                                    "cached", str(runtime), rd.description, date_str]
+                            info_finish = webcom.GetInfoFinish_PRODRES(outpath_this_seq,
+                                    cnt, len(rd.seq), rd.description, source_result="cached", runtime=0.0)
                             myfunc.WriteFile("\t".join(info_finish)+"\n",
                                     finished_seq_file, "a", isFlush=True)
                             isSkip = True
@@ -230,7 +235,6 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                 date_str = time.strftime(g_params['FORMAT_DATETIME'])
                 myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
                 continue
-
 
             cmd = ["python", runscript, "--input", seqfile_this_seq, "--output", tmp_outpath_this_seq, "--pfam-dir", path_pfamdatabase, "--pfamscan-script", path_pfamscanscript, "--fallback-db-fasta", blastdb]
 
@@ -302,21 +306,10 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                                 myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
 
                 if isCmdSuccess:
-                    runtime = runtime_in_sec #in seconds
                     timefile = "%s/time.txt"%(outpath_this_seq)
-                    if os.path.exists(timefile):
-                        content = myfunc.ReadFile(timefile).split("\n")[0]
-                        strs = content.split(";")
-                        try:
-                            runtime = "%.1f"%(float(strs[1]))
-                        except:
-                            pass
-                    extItem1 = None
-                    extItem2 = None
-                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                    info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
-                            str(extItem1), str(extItem2),
-                            "newrun", str(runtime), description, date_str]
+                    runtime = webcom.ReadRuntimeFromFile(timefile, default_runtime=0.0)
+                    info_finish = webcom.GetInfoFinish_PRODRES(outpath_this_seq,
+                            origIndex, len(seq), description, source_result="newrun", runtime=runtime)
                     myfunc.WriteFile("\t".join(info_finish)+"\n",
                             finished_seq_file, "a", isFlush=True)
                     # now write the text output for this seq
@@ -328,36 +321,28 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
                     # create or update the md5 cache
                     # create cache only on the front-end
                     if webcom.IsFrontEndNode(g_params['base_www_url']):
-                        md5_key = hashlib.md5(seq+str(query_para)).hexdigest()
+                        md5_key = hashlib.md5((seq+str(query_para)).encode('utf-8')).hexdigest()
                         subfoldername = md5_key[:2]
                         md5_subfolder = "%s/%s"%(path_cache, subfoldername)
                         cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
-                        if os.path.exists(cachedir):
-                            try:
-                                shutil.rmtree(cachedir)
-                            except:
-                                msg = "Failed to shutil.rmtree(%s)"%(cachedir)
-                                date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                                myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
-                                pass
 
+                        # copy the zipped folder to the cache path
+                        origpath = os.getcwd()
+                        os.chdir(outpath_result)
+                        shutil.copytree("seq_%d"%(origIndex), md5_key)
+                        cmd = ["zip", "-rq", "%s.zip"%(md5_key), md5_key]
+                        webcom.RunCmd(cmd, runjob_logfile, runjob_logfile)
                         if not os.path.exists(md5_subfolder):
-                            try:
-                                os.makedirs(md5_subfolder)
-                            except:
-                                pass
+                            os.makedirs(md5_subfolder)
+                        shutil.move("%s.zip"%(md5_key), "%s.zip"%(cachedir))
+                        shutil.rmtree(md5_key) # delete the temp folder named as md5 hash
+                        os.chdir(origpath)
 
-                        if os.path.exists(md5_subfolder) and not os.path.exists(cachedir):
-                            cmd = ["mv","-f", outpath_this_seq, cachedir]
-                            webcom.RunCmd(cmd, runjob_logfile, runjob_errfile, True)
+                        # Add the finished date to the database
+                        date_str = time.strftime(FORMAT_DATETIME)
+                        webcom.InsertFinishDateToDB(date_str, md5_key, seq, finished_date_db)
 
-                        if not os.path.exists(outpath_this_seq) and os.path.exists(cachedir):
-                            rela_path = os.path.relpath(cachedir, outpath_result) #relative path
-                            try:
-                                os.chdir(outpath_result)
-                                os.symlink(rela_path,  subfoldername_this_seq)
-                            except:
-                                pass
+
 
     all_end_time = time.time()
     all_runtime_in_sec = all_end_time - all_begin_time
@@ -395,22 +380,20 @@ def RunJob(infile, outpath, tmpdir, email, jobid, g_params):#{{{
             else:
                 finish_status = "failed"
             webcom.SendEmail_on_finish(jobid, g_params['base_www_url'],
-                    finish_status, name_server="PRODRES", from_email="prodres@prodres.bioinfo.se",
+                    finish_status, name_server="PRODRES", from_email="no-reply.PRODRES@bioinfo.se",
                     to_email=email, contact_email=contact_email,
                     logfile=runjob_logfile, errfile=runjob_errfile)
 
     if os.path.exists(runjob_errfile) and os.path.getsize(runjob_errfile) > 1:
         return 1
     else:
-        date_str = time.strftime(g_params['FORMAT_DATETIME'])
         try:
             shutil.rmtree(tmpdir)
             msg = "rmtree(%s)"%(tmpdir)
-            myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_logfile, "a", True)
+            webcom.loginfo("rmtree(%s)"%(tmpdir), runjob_logfile)
         except Exception as e:
             msg = "Failed to rmtree(%s)"%(tmpdir)
-            myfunc.WriteFile("[%s] %s\n"%(date_str, msg), runjob_errfile, "a", True)
-            pass
+            webcom.loginfo("Failed to rmtree(%s) with error message: %s"%(tmpdir, str(e)), runjob_errfile)
         return 0
 #}}}
 def main(g_params):#{{{
@@ -517,7 +500,7 @@ def InitGlobalParameter():#{{{
     g_params['isOnlyGetCache'] = False
     g_params['base_www_url'] = ""
     g_params['lockfile'] = ""
-    g_params['FORMAT_DATETIME'] = "%Y-%m-%d %H:%M:%S %Z"
+    g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
     return g_params
 #}}}
 if __name__ == '__main__' :

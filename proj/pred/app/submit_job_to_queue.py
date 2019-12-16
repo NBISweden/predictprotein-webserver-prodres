@@ -10,14 +10,12 @@
 #   try
 import os
 import sys
-import myfunc
 import subprocess
 import time
 import math
+from libpredweb import myfunc
+from libpredweb import webserver_common as webcom
 import json
-import logging
-
-logger = logging.getLogger(__name__)
 suq_exec = "/usr/bin/suq"
 progname =  os.path.basename(__file__)
 wspace = ''.join([" "]*len(progname))
@@ -29,11 +27,8 @@ vip_user_list = [
 rundir = os.path.dirname(os.path.realpath(__file__))
 basedir = os.path.realpath("%s/../"%(rundir))
 python_exec = os.path.realpath("%s/../../env/bin/python"%(basedir))
+virt_env_path = os.path.realpath("%s/../../env"%(basedir))   
 suq_basedir = "/tmp"
-if os.path.exists("/scratch"):
-    suq_basedir = "/scratch"
-elif os.path.exists("/tmp"):
-    suq_basedir = "/tmp"
 gen_errfile = "%s/static/log/%s.log"%(basedir, progname)
 
 usage_short="""
@@ -73,7 +68,6 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
         host_ip, base_www_url):
     myfunc.WriteFile("Entering SubmitJobToQueue()\n", g_params['debugfile'],
             "a", True)
-    logger.info("Entering SubmitJobToQueue()")
     fafile = "%s/query.fa"%(datapath)
 
     if numseq == -1:
@@ -92,12 +86,13 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
     try:
         name_software = query_para['name_software']
     except KeyError:
-        name_software = ""
+        name_software = "prodres"
 
     runjob = "%s %s/run_job.py"%(python_exec, rundir)
     scriptfile = "%s/runjob,%s,%s,%s,%s,%d.sh"%(outpath, name_software, jobid, host_ip, email, numseq)
     code_str_list = []
     code_str_list.append("#!/bin/bash")
+    code_str_list.append("source %s/bin/activate"%(virt_env_path))
     cmdline = "%s %s -outpath %s -tmpdir %s -jobid %s "%(runjob, fafile, outpath, datapath, jobid)
     if email != "":
         cmdline += "-email \"%s\" "%(email)
@@ -112,37 +107,29 @@ def SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user, email, 
     code = "\n".join(code_str_list)
 
     msg = "Writting scriptfile %s"%(scriptfile)
-    myfunc.WriteFile(msg+"\n", g_params['debugfile'], "a", True)
+    webcom.loginfo(msg, g_params['debugfile'])
 
     myfunc.WriteFile(code, scriptfile, mode="w", isFlush=True)
     os.chmod(scriptfile, 0o755)
 
-    myfunc.WriteFile("Getting priority"+"\n", g_params['debugfile'], "a", True)
+    webcom.loginfo("Getting priority", g_params['debugfile'])
     priority = myfunc.GetSuqPriority(numseq_this_user)
 
     if email in vip_user_list:
         priority = 999999999.0
 
-    myfunc.WriteFile("priority=%d\n"%(priority), g_params['debugfile'], "a",
-            True)
-    logger.info("priority=%d"%(priority))
+    webcom.loginfo("priority=%d"%(priority), g_params['debugfile'])
 
-    st1 = SubmitSuqJob(suq_basedir, outpath, datapath, priority, scriptfile)
-
-    logger.info("Leaving SubmitJobToQueue()")
+    st1 = SubmitSuqJob(suq_basedir, datapath, outpath, priority, scriptfile)
 
     return st1
 #}}}
-def SubmitSuqJob(suq_basedir, outpath, datapath, priority, scriptfile):#{{{
-    myfunc.WriteFile("Entering SubmitSuqJob()\n", g_params['debugfile'], "a",
-            True)
-    logger.info("Entering SubmitSuqJob()")
+def SubmitSuqJob(suq_basedir, datapath, outpath, priority, scriptfile):#{{{
+    webcom.loginfo("Entering SubmitSuqJob()", g_params['debugfile'])
     rmsg = ""
     cmd = [suq_exec,"-b", suq_basedir, "run", "-d", outpath, "-p", "%d"%(priority), scriptfile]
     cmdline = " ".join(cmd)
-    myfunc.WriteFile("cmdline: %s\n\n"%(cmdline), g_params['debugfile'], "a",
-            True)
-    logger.info("cmdline: %s"%(cmdline))
+    webcom.loginfo("cmdline: %s\n"%(cmdline), g_params['debugfile'])
     MAX_TRY = 5
     cnttry = 0
     isSubmitSuccess = False
@@ -162,14 +149,10 @@ def SubmitSuqJob(suq_basedir, outpath, datapath, priority, scriptfile):#{{{
         cnttry += 1
         time.sleep(0.05+cnttry*0.03)
     if isSubmitSuccess:
-        myfunc.WriteFile("Leaving SubmitSuqJob() with success\n\n",
-                g_params['debugfile'], "a", True)
-        logger.info("Leaving SubmitSuqJob() with success")
+        webcom.loginfo("Leaving SubmitSuqJob() with success\n", g_params['debugfile'])
         return 0
     else:
-        myfunc.WriteFile("Leaving SubmitSuqJob() with error\n\n",
-                g_params['debugfile'], "a", True)
-        logger.info("Leaving SubmitSuqJob() with error")
+        webcom.loginfo("Leaving SubmitSuqJob() with error\n", g_params['debugfile'])
         return 1
 #}}}
 def main(g_params):#{{{
@@ -192,7 +175,7 @@ def main(g_params):#{{{
     isNonOptionArg=False
     while i < numArgv:
         if isNonOptionArg == True:
-            print("Error! Wrong argument:", argv[i], file=g_params['fperr'])
+            webcom.loginfo("Error! Wrong argument: %s"% (argv[i]), gen_errfile)
             return 1
             isNonOptionArg = False
             i += 1
@@ -229,14 +212,14 @@ def main(g_params):#{{{
                 g_params['isQuiet'] = True
                 i += 1
             else:
-                print("Error! Wrong argument:", argv[i], file=g_params['fperr'])
+                webcom.loginfo("Error! Wrong argument: %s"%(argv[i]), gen_errfile)
                 return 1
         else:
-            print("Error! Wrong argument:", argv[i], file=g_params['fperr'])
+            webcom.loginfo("Error! Wrong argument: %s"%(argv[i]), gen_errfile)
             return 1
 
     if outpath == "":
-        print("outpath not set. exit", file=g_params['fperr'])
+        webcom.loginfo("outpath not set. exit", gen_errfile)
         return 1
     elif not os.path.exists(outpath):
         cmd =  ["mkdir", "-p", outpath]
@@ -248,23 +231,22 @@ def main(g_params):#{{{
             return 1
 
     if jobid == "":
-        print("%s: jobid not set. exit"%(sys.argv[0]), file=g_params['fperr'])
+        webcom.loginfo("%s: jobid not set. exit"%(sys.argv[0]), gen_errfile)
         return 1
 
     if datapath == "":
-        print("%s: datapath not set. exit"%(sys.argv[0]), file=g_params['fperr'])
+        webcom.loginfo("%s: datapath not set. exit"%(sys.argv[0]), gen_errfile)
         return 1
     elif not os.path.exists(datapath):
-        print("%s: datapath does not exist. exit"%(sys.argv[0]), file=g_params['fperr'])
+        webcom.loginfo("%s: datapath does not exist. exit"%(sys.argv[0]), gen_errfile)
         return 1
     elif not os.path.exists("%s/query.fa"%(datapath)):
-        print("%s: file %s/query.fa does not exist. exit"%(sys.argv[0], datapath), file=g_params['fperr'])
+        webcom.loginfo("%s: file %s/query.fa does not exist. exit"%(sys.argv[0], datapath), gen_errfile)
         return 1
 
     g_params['debugfile'] = "%s/debug.log"%(outpath)
 
-    myfunc.WriteFile("Go to SubmitJobToQueue()\n", g_params['debugfile'], "a", True)
-    logger.info("Go to SubmitJobToQueue()")
+    webcom.loginfo("Go to SubmitJobToQueue()", g_params['debugfile'])
     return SubmitJobToQueue(jobid, datapath, outpath, numseq, numseq_this_user,
             email, host_ip, base_www_url)
 
@@ -275,19 +257,9 @@ def InitGlobalParameter():#{{{
     g_params['isQuiet'] = True
     g_params['isForceRun'] = False
     g_params['isOnlyGetCache'] = False
-    g_params['fperr'] = None
     return g_params
 #}}}
 if __name__ == '__main__' :
     g_params = InitGlobalParameter()
-    try:
-        g_params['fperr'] = open(gen_errfile, "a")
-    except IOError:
-        g_params['fperr'] = sys.stderr
-        pass
-    g_params = InitGlobalParameter()
-    status = main(g_params)
-    if g_params['fperr'] and g_params['fperr'] != sys.stderr:
-        g_params['fperr'].close()
-    sys.exit(status)
+    sys.exit(main(g_params))
 
