@@ -1003,6 +1003,7 @@ def get_serverstatus(request):#{{{
 
 # finished sequences submitted by wsdl
 # finished sequences submitted by web
+    num_seq_in_local_queue = 0
 
 # get jobs queued remotely ()
     runjob_dict = {}
