@@ -1248,7 +1248,7 @@ def oldserver(request):#{{{
 #}}}
 def help_wsdl_api(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['jobcounter'] = webcom.GetJobCounter(info)
     api_script_rtname =  "prodres_wsdl"
     extlist = [".py"]
