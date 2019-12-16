@@ -1810,7 +1810,7 @@ def main(g_params):#{{{
         date_str = time.strftime(g_params['FORMAT_DATETIME'])
         avail_computenode = webcom.ReadComputeNode(computenodefile) # return value is a dict
         g_params['vip_user_list'] = myfunc.ReadIDList2(vip_email_file,  col=0)
-        num_avail_node = len(avail_computenode_list)
+        num_avail_node = len(avail_computenode)
 
         webcom.loginfo("loop %d"%(loop), gen_logfile)
 
@@ -1852,7 +1852,7 @@ def main(g_params):#{{{
         # For finished jobs, clean data not used for caching
 
         cntSubmitJobDict = {} # format of cntSubmitJobDict {'node_ip': INT, 'node_ip': INT}
-        for node in avail_computenode_list:
+        for node in avail_computenode:
             queue_method = avail_computenode[node]['queue_method']
             num_queue_job = len(remotequeueDict[node])
             if num_queue_job >= 0:
