@@ -452,7 +452,7 @@ def thanks(request):#{{{
 #}}}
 
 def get_queue(request):
-    info = webcom.get_queue(request, path_static, settings)
+    info = webcom.get_queue(request, g_params)
     return render(request, 'pred/queue.html', info)
 
 def get_queue_del(request):#{{{
