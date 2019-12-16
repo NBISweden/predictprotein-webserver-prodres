@@ -455,6 +455,18 @@ def get_queue(request):
     info = webcom.get_queue(request, g_params)
     return render(request, 'pred/queue.html', info)
 
+def get_running(request):
+    info = webcom.get_running(request, g_params)
+    return render(request, 'pred/running.html', info)
+
+def get_finished_job(request):
+    info = webcom.get_finished_job(request, g_params)
+    return render(request, 'pred/finished_job.html', info)
+
+def get_failed_job(request):
+    info = webcom.get_finished_job(request, g_params)
+    return render(request, 'pred/failed_job.html', info)
+
 def get_queue_del(request):#{{{
     errfile = "%s/server.err"%(path_result)
 
@@ -552,7 +564,7 @@ def get_queue_del(request):#{{{
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/queue.html', info)
 #}}}
-def get_running(request):#{{{
+def get_running_del(request):#{{{
     # Get running jobs
     errfile = "%s/server.err"%(path_result)
     status = "Running"
@@ -662,7 +674,7 @@ def get_running(request):#{{{
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/running.html', info)
 #}}}
-def get_finished_job(request):#{{{
+def get_finished_job_del(request):#{{{
     info = {}
     webcom.set_basic_config(request, info, g_params)
 
@@ -796,7 +808,7 @@ def get_finished_job(request):#{{{
     return render(request, 'pred/finished_job.html', info)
 
 #}}}
-def get_failed_job(request):#{{{
+def get_failed_job_del(request):#{{{
     info = {}
     webcom.set_basic_config(request, info, g_params)
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
@@ -1262,7 +1274,7 @@ def help_wsdl_api(request):#{{{
 #}}}
 def download(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     info['zipfile_wholepackage'] = ""
     info['zipfile_database'] = ""
