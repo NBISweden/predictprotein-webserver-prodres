@@ -68,6 +68,7 @@ g_params['MAX_NUMSEQ_PER_JOB'] = 50000
 g_params['MAX_ALLOWD_NUMSEQ'] = 50000
 g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
 
+path_static = "%s/static"%(SITE_ROOT)
 path_log = "%s/static/log"%(SITE_ROOT)
 path_stat = "%s/stat"%(path_log)
 path_result = "%s/static/result"%(SITE_ROOT)
