@@ -528,7 +528,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                 isSkip = False
                 outpath_this_seq = "%s/%s"%(outpath_result, "seq_%d"%i)
                 subfoldername_this_seq = "seq_%d"%(i)
-                md5_key = hashlib.md5(seqList[i]+str(query_para)).hexdigest()
+                md5_key = hashlib.md5((seqList[i]+str(query_para)).encode('utf-8')).hexdigest()
                 subfoldername = md5_key[:2]
                 cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
                 if os.path.exists(cachedir):
@@ -940,7 +940,7 @@ def GetResult(jobid):#{{{
                                 shutil.rmtree("%s/%s"%(tmpdir, remote_jobid))
 
                                 # create or update the md5 cache
-                                md5_key = hashlib.md5(seq+str(query_para)).hexdigest()
+                                md5_key = hashlib.md5((seq+str(query_para)).encode('utf-8')).hexdigest()
                                 subfoldername = md5_key[:2]
                                 md5_subfolder = "%s/%s"%(path_cache, subfoldername)
                                 cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
