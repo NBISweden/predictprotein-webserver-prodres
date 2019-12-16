@@ -129,13 +129,13 @@ def index(request):#{{{
 def login(request):#{{{
     #logout(request)
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/login.html', info)
 #}}}
 def submit_seq(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
@@ -465,7 +465,7 @@ def get_queue_del(request):#{{{
     errfile = "%s/server.err"%(path_result)
 
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     status = "Queued"
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
@@ -563,7 +563,7 @@ def get_running(request):#{{{
     errfile = "%s/server.err"%(path_result)
     status = "Running"
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['header'] = ["No.", "JobID", "JobName", "NumSeq", "NumFinish", "Email",
             "QueueTime", "RunTime", "Date", "Source"]
     if info['isSuperUser']:
@@ -670,7 +670,7 @@ def get_running(request):#{{{
 #}}}
 def get_finished_job(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
             "QueueTime","RunTime", "Date", "Source"]
@@ -804,7 +804,7 @@ def get_finished_job(request):#{{{
 #}}}
 def get_failed_job(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
             "QueueTime","RunTime", "Date", "Source"]
     if info['isSuperUser']:
@@ -930,13 +930,13 @@ def get_failed_job(request):#{{{
 
 def get_help(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/help.html', info)
 #}}}
 def get_countjob_country(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     countjob_by_country = "%s/countjob_by_country.txt"%(path_stat)
     lines = myfunc.ReadFile(countjob_by_country).split("\n")
@@ -970,7 +970,7 @@ def get_countjob_country(request):#{{{
 #}}}
 def get_news(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     newsfile = "%s/%s/%s"%(SITE_ROOT, "static/doc", "news.txt")
     newsList = []
@@ -983,13 +983,13 @@ def get_news(request):#{{{
 #}}}
 def get_reference(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/reference.html', info)
 #}}}
 def get_serverstatus(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     logfile_finished =  "%s/%s/%s"%(SITE_ROOT, "static/log", "finished_job.log")
     logfile_runjob =  "%s/%s/%s"%(SITE_ROOT, "static/log", "runjob_log.log")
@@ -1249,7 +1249,7 @@ def get_serverstatus(request):#{{{
 #}}}
 def get_example(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/example.html', info)
 #}}}
@@ -1259,7 +1259,7 @@ def oldserver(request):#{{{
 #}}}
 def help_wsdl_api(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
     info['jobcounter'] = webcom.GetJobCounter(info)
     api_script_rtname =  "prodres_wsdl"
     extlist = [".py"]
@@ -1286,7 +1286,7 @@ def help_wsdl_api(request):#{{{
 #}}}
 def download(request):#{{{
     info = {}
-    set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, path_static, settings)
 
     info['zipfile_wholepackage'] = ""
     info['zipfile_database'] = ""
@@ -1312,7 +1312,7 @@ def download(request):#{{{
 
 def get_results(request, jobid="1"):#{{{
     resultdict = {}
-    set_basic_config(request, resultdict, path_static, settings)
+    webcom.set_basic_config(request, resultdict, path_static, settings)
 
     rstdir = "%s/%s"%(path_result, jobid)
     outpathname = jobid
@@ -1632,7 +1632,7 @@ def get_results(request, jobid="1"):#{{{
 #}}}
 def get_results_eachseq(request, jobid="1", seqindex="1"):#{{{
     resultdict = {}
-    set_basic_config(request, resultdict, path_static, settings)
+    webcom.set_basic_config(request, resultdict, path_static, settings)
 
     rstdir = "%s/%s"%(path_result, jobid)
     outpathname = jobid
