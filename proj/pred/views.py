@@ -51,6 +51,14 @@ from django.contrib.auth import authenticate, login, logout
 # import variables from settings
 from django.conf import settings
 
+path_static = "%s/static"%(SITE_ROOT)
+path_log = "%s/static/log"%(SITE_ROOT)
+path_stat = "%s/stat"%(path_log)
+path_result = "%s/static/result"%(SITE_ROOT)
+path_tmp = "%s/static/tmp"%(SITE_ROOT)
+path_md5 = "%s/static/md5"%(SITE_ROOT)
+python_exec = os.path.realpath("%s/../../env/bin/python"%(SITE_ROOT))
+
 
 # global parameters
 g_params = {}
@@ -67,24 +75,9 @@ g_params['MAXSIZE_UPLOAD_FILE_IN_BYTE']  = g_params['MAXSIZE_UPLOAD_FILE_IN_MB']
 g_params['MAX_NUMSEQ_PER_JOB'] = 50000
 g_params['MAX_ALLOWD_NUMSEQ'] = 50000
 g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
-
-path_static = "%s/static"%(SITE_ROOT)
-path_log = "%s/static/log"%(SITE_ROOT)
-path_stat = "%s/stat"%(path_log)
-path_result = "%s/static/result"%(SITE_ROOT)
-path_tmp = "%s/static/tmp"%(SITE_ROOT)
-path_md5 = "%s/static/md5"%(SITE_ROOT)
-
-python_exec = os.path.realpath("%s/../../env/bin/python"%(SITE_ROOT))
-
-
-suq_basedir = "/tmp"
-if os.path.exists("/scratch"):
-    suq_basedir = "/scratch"
-elif os.path.exists("/tmp"):
-    suq_basedir = "/tmp"
-rundir = SITE_ROOT
-suq_exec = "/usr/bin/suq";
+g_params['STATIC_URL'] = settings.STATIC_URL
+g_params['SUPER_USER_LIST'] = settings.SUPER_USER_LIST
+g_params['path_static'] = path_static
 
 qd_fe_scriptfile = "%s/qd_fe.py"%(path_app)
 gen_errfile = "%s/static/log/%s.err"%(SITE_ROOT, progname)
@@ -130,13 +123,13 @@ def index(request):#{{{
 def login(request):#{{{
     #logout(request)
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/login.html', info)
 #}}}
 def submit_seq(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     # if this is a POST request we need to process the form data
     if request.method == 'POST':
@@ -466,7 +459,7 @@ def get_queue_del(request):#{{{
     errfile = "%s/server.err"%(path_result)
 
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     status = "Queued"
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
@@ -564,7 +557,7 @@ def get_running(request):#{{{
     errfile = "%s/server.err"%(path_result)
     status = "Running"
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['header'] = ["No.", "JobID", "JobName", "NumSeq", "NumFinish", "Email",
             "QueueTime", "RunTime", "Date", "Source"]
     if info['isSuperUser']:
@@ -671,7 +664,7 @@ def get_running(request):#{{{
 #}}}
 def get_finished_job(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
             "QueueTime","RunTime", "Date", "Source"]
@@ -805,7 +798,7 @@ def get_finished_job(request):#{{{
 #}}}
 def get_failed_job(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['header'] = ["No.", "JobID","JobName", "NumSeq", "Email",
             "QueueTime","RunTime", "Date", "Source"]
     if info['isSuperUser']:
@@ -931,13 +924,13 @@ def get_failed_job(request):#{{{
 
 def get_help(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/help.html', info)
 #}}}
 def get_countjob_country(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     countjob_by_country = "%s/countjob_by_country.txt"%(path_stat)
     lines = myfunc.ReadFile(countjob_by_country).split("\n")
@@ -971,7 +964,7 @@ def get_countjob_country(request):#{{{
 #}}}
 def get_news(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     newsfile = "%s/%s/%s"%(SITE_ROOT, "static/doc", "news.txt")
     newsList = []
@@ -984,13 +977,13 @@ def get_news(request):#{{{
 #}}}
 def get_reference(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/reference.html', info)
 #}}}
 def get_serverstatus(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
 
     logfile_finished =  "%s/%s/%s"%(SITE_ROOT, "static/log", "finished_job.log")
     logfile_runjob =  "%s/%s/%s"%(SITE_ROOT, "static/log", "runjob_log.log")
@@ -998,24 +991,6 @@ def get_serverstatus(request):#{{{
 
 # finished sequences submitted by wsdl
 # finished sequences submitted by web
-
-# javascript to show finished sequences of the data (histogram)
-
-# get jobs queued locally (at the front end)
-    num_seq_in_local_queue = 0
-    cmd = [suq_exec, "-b", suq_basedir, "ls"]
-    cmdline = " ".join(cmd)
-    try:
-        suq_ls_content =  subprocess.check_output(cmd, stderr=subprocess.STDOUT)
-        lines = suq_ls_content.split("\n")
-        cntjob = 0
-        for line in lines:
-            if line.find("runjob") != -1:
-                cntjob += 1
-        num_seq_in_local_queue = cntjob
-    except subprocess.CalledProcessError as e:
-        date_str = time.strftime(g_params['FORMAT_DATETIME'])
-        myfunc.WriteFile("[%s] %s\n"%(datetime, str(e)), gen_errfile, "a", True)
 
 # get jobs queued remotely ()
     runjob_dict = {}
@@ -1250,7 +1225,7 @@ def get_serverstatus(request):#{{{
 #}}}
 def get_example(request):#{{{
     info = {}
-    webcom.set_basic_config(request, info, path_static, settings)
+    webcom.set_basic_config(request, info, g_params)
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/example.html', info)
 #}}}
@@ -1313,7 +1288,7 @@ def download(request):#{{{
 
 def get_results(request, jobid="1"):#{{{
     resultdict = {}
-    webcom.set_basic_config(request, resultdict, path_static, settings)
+    webcom.set_basic_config(request, resultdict, g_params)
 
     rstdir = "%s/%s"%(path_result, jobid)
     outpathname = jobid
@@ -1633,7 +1608,7 @@ def get_results(request, jobid="1"):#{{{
 #}}}
 def get_results_eachseq(request, jobid="1", seqindex="1"):#{{{
     resultdict = {}
-    webcom.set_basic_config(request, resultdict, path_static, settings)
+    webcom.set_basic_config(request, resultdict, g_params)
 
     rstdir = "%s/%s"%(path_result, jobid)
     outpathname = jobid
