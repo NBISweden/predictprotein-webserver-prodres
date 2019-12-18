@@ -481,7 +481,7 @@ def get_news(request):# {{{
     return render(request, 'pred/news.html', info)
 # }}}
 def help_wsdl_api(request):# {{{
-    g_params['api_script_rtname'] = 'topcons2_wsdl'
+    g_params['api_script_rtname'] = 'prodres_wsdl'
     info = webcom.help_wsdl_api(request, g_params)
     return render(request, 'pred/help_wsdl_api.html', info)
 # }}}
