@@ -78,6 +78,8 @@ g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
 g_params['STATIC_URL'] = settings.STATIC_URL
 g_params['SUPER_USER_LIST'] = settings.SUPER_USER_LIST
 g_params['path_static'] = path_static
+g_params['path_stat'] = path_stat
+g_params['SITE_ROOT'] = SITE_ROOT
 
 qd_fe_scriptfile = "%s/qd_fe.py"%(path_app)
 gen_errfile = "%s/static/log/%s.err"%(SITE_ROOT, progname)
