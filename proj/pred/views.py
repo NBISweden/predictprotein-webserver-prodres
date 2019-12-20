@@ -74,6 +74,7 @@ g_params['MAX_LEN_SEQ']  = 10000   # maximum length of the query sequence
 g_params['MAXSIZE_UPLOAD_FILE_IN_BYTE']  = g_params['MAXSIZE_UPLOAD_FILE_IN_MB'] * 1024*1024
 g_params['MAX_NUMSEQ_PER_JOB'] = 50000
 g_params['MAX_ALLOWD_NUMSEQ'] = 50000
+g_params['MAX_ACTIVE_USER'] = 10
 g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
 g_params['STATIC_URL'] = settings.STATIC_URL
 g_params['SUPER_USER_LIST'] = settings.SUPER_USER_LIST
@@ -488,6 +489,11 @@ def help_wsdl_api(request):# {{{
     return render(request, 'pred/help_wsdl_api.html', info)
 # }}}
 
+def get_serverstatus(request):# {{{
+    info = webcom.get_serverstatus(request, isShowLocalQueue=False, g_params=g_params)
+    return render(request, 'pred/serverstatus.html', info)
+# }}}
+
 
 def get_reference(request):#{{{
     info = {}
@@ -495,7 +501,7 @@ def get_reference(request):#{{{
     info['jobcounter'] = webcom.GetJobCounter(info)
     return render(request, 'pred/reference.html', info)
 #}}}
-def get_serverstatus(request):#{{{
+def get_serverstatus_del(request):#{{{
     info = {}
     webcom.set_basic_config(request, info, g_params)
 
