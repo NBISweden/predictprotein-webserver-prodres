@@ -23,6 +23,7 @@ sys.path.append("/usr/local/lib/python2.7/dist-packages")
 from libpredweb import myfunc
 from libpredweb import dataprocess
 from libpredweb import webserver_common as webcom
+from libpredweb import qd_fe_common as qdcom
 
 import time
 import requests
@@ -1194,7 +1195,7 @@ def main(g_params):#{{{
 
 
         if loop % g_params['STATUS_UPDATE_FREQUENCY'][0] == g_params['STATUS_UPDATE_FREQUENCY'][1]:
-            webcom.RunStatistics_basic(webserver_root, gen_logfile, gen_errfile)
+            qdcom.RunStatistics_basic(webserver_root, gen_logfile, gen_errfile)
             webcom.DeleteOldResult(path_result, path_log, gen_logfile, MAX_KEEP_DAYS=g_params['MAX_KEEP_DAYS'])
             webcom.CleanServerFile(path_static, gen_logfile, gen_errfile)
 
