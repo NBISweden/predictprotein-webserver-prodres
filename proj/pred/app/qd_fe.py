@@ -363,8 +363,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                                     "newrun", str(runtime), description, date_str]
                             finished_info_list.append("\t".join(info_finish))
                 except:
-                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                    myfunc.WriteFile("[Date: %s] Failed to os.listdir(%s)\n"%(date_str, outpath_result), gen_errfile, "a", True)
+                    webcom.loginfo("jobid = %s, initial processing failed to with error message: %s"%(jobid, str(e)), gen_errfile)
                     raise
                 if len(finished_info_list)>0:
                     myfunc.WriteFile("\n".join(finished_info_list)+"\n", finished_seq_file, "a", True)
@@ -496,9 +495,8 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
         # ==== 1.dealing with cached results 
         (seqIDList, seqAnnoList, seqList) = myfunc.ReadFasta(fafile)
         if len(seqIDList) <= 0:
-            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-            myfunc.WriteFile(date_str, failedtagfile, "w", True)
-            myfunc.WriteFile("Read query seq file failed. Zero sequence read in.\n", runjob_errfile, "a", True)
+            myfunc.WriteDateTimeTagFile(failedtagfile, runjob_logfile, runjob_errfile)
+            webcom.loginfo("Read query seq file failed. Zero sequence read in.", runjob_errfile)
             return 1
         toRunDict = {}
         if os.path.exists(forceruntagfile):
@@ -602,9 +600,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
             try:
                 myclient = Client(wsdl_url, cache=None, timeout=30)
             except:
-                date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                myfunc.WriteFile("[Date: %s] Failed to access %s\n"%(date_str,
-                    wsdl_url), gen_errfile, "a", True)
+                webcom.loginfo("Failed to access %s\n"%( wsdl_url), gen_errfile)
                 break
 
             [cnt, maxnum, queue_method] = cntSubmitJobDict[node]
@@ -657,9 +653,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                         rtValue = myclient.service.submitjob_remote(fastaseq, para_str,
                                 jobname, useemail, str(numseq_this_user), isforcerun)
                     except:
-                        date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                        msg = "Failed to run myclient.service.submitjob_remote for job %s seq_%d"%(jobid, origIndex)
-                        myfunc.WriteFile("[%s] %s\n"%(date_str, msg), gen_errfile, "a", True)
+                        webcom.loginfo("Failed to run myclient.service.submitjob_remote", gen_errfile)
                         rtValue = []
                         pass
 
@@ -682,8 +676,8 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                                 submitted_loginfo_list.append(txt)
                                 cnttry = 0  #reset cnttry to zero
                         else:
-                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                            myfunc.WriteFile("[Date: %s] bad wsdl return value\n"%(date_str), gen_errfile, "a", True)
+                            webcom.loginfo("bad wsdl return value"%, gen_errfile)
+
                 if isSubmitSuccess:
                     cnt += 1
                     myfunc.WriteFile(" succeeded\n", gen_logfile, "a", True)
@@ -718,7 +712,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
 #}}}
 def GetResult(jobid):#{{{
     # retrieving result from the remote server for this job
-    myfunc.WriteFile("GetResult for %s.\n" %(jobid), gen_logfile, "a", True)
+    webcom.loginfo("GetResult for %s" %(jobid), gen_logfile)
     rstdir = "%s/%s"%(path_result, jobid)
     runjob_logfile = "%s/%s"%(rstdir, "runjob.log")
     runjob_errfile = "%s/%s"%(rstdir, "runjob.err")
@@ -814,8 +808,7 @@ def GetResult(jobid):#{{{
             myclient = Client(wsdl_url, cache=None, timeout=30)
             myclientDict[node] = myclient
         except:
-            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-            myfunc.WriteFile("[Date: %s] Failed to access %s\n"%(date_str, wsdl_url), gen_errfile, "a", True)
+            webcom.loginfo("Failed to access %s"%(wsdl_url), gen_errfile)
             pass
 
 
@@ -845,8 +838,7 @@ def GetResult(jobid):#{{{
         try:
             rtValue = myclient.service.checkjob(remote_jobid)
         except:
-            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-            myfunc.WriteFile("[Date: %s] Failed to run myclient.service.checkjob(%s)\n"%(date_str, remote_jobid), gen_errfile, "a", True)
+            webcom.loginfo("Failed to run myclient.service.checkjob(%s) for job %s"%(remote_jobid, jobid), gen_errfile)
             rtValue = []
             pass
         isSuccess = False
@@ -896,8 +888,7 @@ def GetResult(jobid):#{{{
                                 try:
                                     rtValue2 = myclient.service.deletejob(remote_jobid)
                                 except:
-                                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                                    myfunc.WriteFile( "[Date: %s] Failed to run myclient.service.deletejob(%s)\n"%(date_str, remote_jobid), gen_errfile, "a", True)
+                                    webcom.loginfo("Failed to run myclient.service.deletejob(%s) for job %s"%(remote_jobid, jobid), gen_errfile)
                                     rtValue2 = []
                                     pass
 
@@ -1015,8 +1006,7 @@ def GetResult(jobid):#{{{
                 try:
                     rtValue2 = myclient.service.deletejob(remote_jobid)
                 except Exception as e:
-                    date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                    myfunc.WriteFile( "[%s] Failed to run myclient.service.deletejob(%s) on node %s with msg %s\n"%(date_str, remote_jobid, node, str(e)), gen_logfile, "a", True)
+                    webcom.loginfo( "Failed to run myclient.service.deletejob(%s) on node %s with msg %s\n"%(remote_jobid, node, str(e)), gen_logfile)
                     rtValue2 = []
                     pass
             else:
@@ -1163,7 +1153,6 @@ def main(g_params):#{{{
 
         if os.path.exists(black_iplist_file):
             g_params['blackiplist'] = myfunc.ReadIDList(black_iplist_file)
-        date_str = time.strftime(g_params['FORMAT_DATETIME'])
         avail_computenode = webcom.ReadComputeNode(computenodefile) # return value is a dict
         g_params['vip_user_list'] = myfunc.ReadIDList2(vip_email_file,  col=0)
         num_avail_node = len(avail_computenode)
@@ -1246,8 +1235,7 @@ def main(g_params):#{{{
                         runjob_lockfile = "%s/%s/%s.lock"%(path_result, jobid, "runjob.lock")
                         if os.path.exists(runjob_lockfile):
                             msg = "runjob_lockfile %s exists, ignore the job %s" %(runjob_lockfile, jobid)
-                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                            myfunc.WriteFile("[%s] %s\n"%(date_str, msg), gen_logfile, "a", True)
+                            webcom.loginfo(msg, gen_logfile)
                             continue
 
                         if webcom.IsHaveAvailNode(cntSubmitJobDict):
