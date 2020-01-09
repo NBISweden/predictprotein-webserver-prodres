@@ -339,28 +339,13 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
                             outpath_this_seq = "%s/%s"%(outpath_result, dd)
                             timefile = "%s/time.txt"%(outpath_this_seq)
                             seqfile = "%s/seq.fa"%(outpath_this_seq)
-                            runtime1 = 0.0
                             seq = ""
                             description = ""
                             if os.path.exists(seqfile):
                                 (seqid, description, seq) = myfunc.ReadSingleFasta(seqfile)
-                            if os.path.exists(timefile):
-                                txt = myfunc.ReadFile(timefile).strip()
-                                ss2 = txt.split(";")
-                                try:
-                                    runtime = float(ss2[1])
-                                except:
-                                    runtime = runtime1
-                                    pass
-                            else:
-                                runtime = runtime1
-
-                            extItem1 = None
-                            extItem2 = None
-                            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-                            info_finish = [ dd, str(len(seq)), 
-                                    str(extItem1), str(extItem2),
-                                    "newrun", str(runtime), description, date_str]
+                            runtime = webcom.ReadRuntimeFromFile(timefile, default_runtime=0.0)
+                            info_finish = webcom.GetInfoFinish_PRODRES(outpath_this_seq,
+                                    origIndex, len(seq), description, source_result="newrun", runtime=runtime)
                             finished_info_list.append("\t".join(info_finish))
                 except:
                     webcom.loginfo("jobid = %s, initial processing failed to with error message: %s"%(jobid, str(e)), gen_errfile)
@@ -676,7 +661,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                                 submitted_loginfo_list.append(txt)
                                 cnttry = 0  #reset cnttry to zero
                         else:
-                            webcom.loginfo("bad wsdl return value"%, gen_errfile)
+                            webcom.loginfo("bad wsdl return value", gen_errfile)
 
                 if isSubmitSuccess:
                     cnt += 1
@@ -971,27 +956,11 @@ def GetResult(jobid):#{{{
                     myfunc.WriteFile("\n", gen_logfile, "a", True)
 
         if isSuccess:#{{{
-            time_now = time.time()
-            runtime = 5.0
-            runtime1 = time_now - submit_time_epoch #in seconds
             timefile = "%s/time.txt"%(outpath_this_seq)
-            if os.path.exists(timefile):
-                txt = myfunc.ReadFile(timefile).strip()
-                ss2 = txt.split(";")
-                try:
-                    runtime = float(ss2[1])
-                except:
-                    runtime = runtime1
-                    pass
-            else:
-                runtime = runtime1
-
-            extItem1 = None
-            extItem2 = None
-            date_str = time.strftime(g_params['FORMAT_DATETIME'])
-            info_finish = [ "seq_%d"%origIndex, str(len(seq)), 
-                    str(extItem1), str(extItem2),
-                    "newrun", str(runtime), description, date_str]
+            runtime1 = time.time() - submit_time_epoch #in seconds
+            runtime = webcom.ReadRuntimeFromFile(timefile, default_runtime=runtime1)
+            info_finish = webcom.GetInfoFinish_PRODRES(outpath_this_seq,
+                    origIndex, len(seq), description, source_result="newrun", runtime=runtime)
             finished_info_list.append("\t".join(info_finish))
             finished_idx_list.append(str(origIndex))#}}}
 
@@ -1254,7 +1223,6 @@ def main(g_params):#{{{
 
     return 0
 #}}}
-
 
 def InitGlobalParameter():#{{{
     g_params = {}
