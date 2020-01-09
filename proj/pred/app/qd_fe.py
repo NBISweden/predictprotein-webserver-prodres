@@ -100,44 +100,6 @@ def PrintHelp(fpout=sys.stdout):#{{{
     print(usage_ext, file=fpout)
     print(usage_exp, file=fpout)#}}}
 
-def GetNumSeqSameUserDict(joblist):#{{{
-# calculate the number of sequences for each user in the queue or running
-# Fixed error for getting numseq at 2015-04-11
-    numseq_user_dict = {}
-    for i in range(len(joblist)):
-        li1 = joblist[i]
-        jobid1 = li1[0]
-        ip1 = li1[3]
-        email1 = li1[4]
-        try:
-            numseq1 = int(li1[5])
-        except:
-            numseq1 = 123
-            pass
-        if not jobid1 in numseq_user_dict:
-            numseq_user_dict[jobid1] = 0
-        numseq_user_dict[jobid1] += numseq1
-        if ip1 == "" and email1 == "":
-            continue
-
-        for j in range(len(joblist)):
-            li2 = joblist[j]
-            if i == j:
-                continue
-
-            jobid2 = li2[0]
-            ip2 = li2[3]
-            email2 = li2[4]
-            try:
-                numseq2 = int(li2[5])
-            except:
-                numseq2 = 123
-                pass
-            if ((ip2 != "" and ip2 == ip1) or
-                    (email2 != "" and email2 == email1)):
-                numseq_user_dict[jobid1] += numseq2
-    return numseq_user_dict
-#}}}
 def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
         finishedjoblogfile, loop):
     myfunc.WriteFile("CreateRunJoblog...\n", gen_logfile, "a", True)
@@ -300,7 +262,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
 # the queuing jobs are sorted in descending order by the suq priority
 # frist get numseq_this_user for each jobs
 # format of numseq_this_user: {'jobid': numseq_this_user}
-    numseq_user_dict = GetNumSeqSameUserDict(new_runjob_list + new_waitjob_list)
+    numseq_user_dict = webcom.GetNumSeqSameUserDict(new_runjob_list + new_waitjob_list)
 
 # now append numseq_this_user and priority score to new_waitjob_list and
 # new_runjob_list
@@ -1008,7 +970,6 @@ def GetResult(jobid):#{{{
 
     return 0
 #}}}
-
 def CheckIfJobFinished(jobid, numseq, email):#{{{
     # check if the job is finished and write tagfiles
     myfunc.WriteFile("CheckIfJobFinished for %s.\n" %(jobid), gen_logfile, "a", True)
@@ -1159,12 +1120,7 @@ def main(g_params):#{{{
 
         webcom.ArchiveLogFile(path_log, threshold_logfilesize=threshold_logfilesize) 
 
-        if os.path.exists(gen_logfile):
-            myfunc.ArchiveFile(gen_logfile, threshold_logfilesize)
-        if os.path.exists(gen_errfile):
-            myfunc.ArchiveFile(gen_errfile, threshold_logfilesize)
         # For finished jobs, clean data not used for caching
-
         cntSubmitJobDict = {} # format of cntSubmitJobDict {'node_ip': INT, 'node_ip': INT}
         for node in avail_computenode:
             queue_method = avail_computenode[node]['queue_method']
