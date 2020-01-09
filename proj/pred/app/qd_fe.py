@@ -41,10 +41,6 @@ TZ = "Europe/Stockholm"
 os.environ['TZ'] = TZ
 time.tzset()
 
-vip_user_list = [
-        "nanjiang.shu@scilifelab.se"
-        ]
-
 # make sure that only one instance of the script is running
 # this code is working 
 progname = os.path.basename(__file__)
@@ -337,7 +333,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
             if ip in g_params['blackiplist']:
                 priority = priority/1000.0
 
-            if email in vip_user_list:
+            if email in g_params['vip_user_list']:
                 numseq_this_user = 1
                 priority = 999999999.0
                 myfunc.WriteFile("email %s in vip_user_list\n"%(email), gen_logfile, "a", True)
@@ -364,7 +360,7 @@ def CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,#{{{
         myfunc.WriteFile("", runjoblogfile, "w", True)
 
 #}}}
-def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
+def SubmitJob(jobid, cntSubmitJobDict, numseq_this_user):#{{{
 # for each job rstdir, keep three log files, 
 # 1.seqs finished, finished_seq log keeps all information, finished_index_log
 #   can be very compact to speed up reading, e.g.
@@ -437,6 +433,10 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
     if not os.path.exists(qdinittagfile): #initialization#{{{
         if not os.path.exists(tmpdir):
             os.mkdir(tmpdir)
+        if isForceRun or os.path.exists(cache_process_finish_tagfile):
+            isCacheProcessingFinished = True
+        else:
+            isCacheProcessingFinished = False
 
         init_finished_idx_list = [] # [origIndex]
         # ==== 1.dealing with cached results 
@@ -445,6 +445,67 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
             myfunc.WriteDateTimeTagFile(failedtagfile, runjob_logfile, runjob_errfile)
             webcom.loginfo("Read query seq file failed. Zero sequence read in.", runjob_errfile)
             return 1
+
+        if g_params['DEBUG']:
+            msg = "jobid = %s, isCacheProcessingFinished=%s, MAX_CACHE_PROCESS=%d"%(
+                    jobid, str(isCacheProcessingFinished), g_params['MAX_CACHE_PROCESS'])
+            webcom.loginfo(msg, gen_logfile)
+
+        if not isCacheProcessingFinished:
+            finished_idx_set = set(finished_idx_list)
+
+            lastprocessed_idx = -1
+            if os.path.exists(lastprocessed_cache_idx_file):
+                try:
+                    lastprocessed_idx = int(myfunc.ReadFile(lastprocessed_cache_idx_file))
+                except:
+                    lastprocessed_idx = -1
+            cnt_processed_cache = 0
+            for i in range(lastprocessed_idx+1, len(seqIDList)):
+                if i in finished_idx_set:
+                    continue
+                outpath_this_seq = "%s/%s"%(outpath_result, "seq_%d"%i)
+                subfoldername_this_seq = "seq_%d"%(i)
+                md5_key = hashlib.md5(seqList[i].encode('utf-8')).hexdigest()
+                subfoldername = md5_key[:2]
+                cachedir = "%s/%s/%s"%(path_cache, subfoldername, md5_key)
+                zipfile_cache = cachedir + ".zip"
+
+                if os.path.exists(cachedir) or os.path.exists(zipfile_cache):
+                    if os.path.exists(cachedir):
+                        try:
+                            shutil.copytree(cachedir, outpath_this_seq)
+                        except Exception as e:
+                            msg = "Failed to copytree  %s -> %s"%(cachedir, outpath_this_seq)
+                            webcom.loginfo("%s with errmsg=%s"%(msg, str(e)), runjob_errfile)
+                    elif os.path.exists(zipfile_cache):
+                        cmd = ["unzip", zipfile_cache, "-d", outpath_result]
+                        webcom.RunCmd(cmd, runjob_logfile, runjob_errfile)
+                        if os.path.exists(outpath_this_seq):
+                            shutil.rmtree(outpath_this_seq)
+                        shutil.move("%s/%s"%(outpath_result, md5_key), outpath_this_seq)
+
+                    if os.path.exists(outpath_this_seq):
+                        if not os.path.exists(starttagfile): #write start tagfile
+                            webcom.WriteDateTimeTagFile(starttagfile, runjob_logfile, runjob_errfile)
+
+                        info_finish = webcom.GetInfoFinish_PRODRES(outpath_this_seq,
+                                i, len(seqList[i]), seqAnnoList[i], source_result="cached", runtime=0.0)
+                        myfunc.WriteFile("\t".join(info_finish)+"\n",
+                                finished_seq_file, "a", isFlush=True)
+                        myfunc.WriteFile("%d\n"%(i), finished_idx_file, "a", True)
+
+                    if g_params['DEBUG']:
+                        msg = "Get result from cache for seq_%d"%(i)
+                        webcom.loginfo(msg, gen_logfile)
+                    if cnt_processed_cache+1 >= g_params['MAX_CACHE_PROCESS']:
+                        myfunc.WriteFile(str(i), lastprocessed_cache_idx_file, "w", True)
+                        return 0
+                    cnt_processed_cache += 1
+
+            webcom.WriteDateTimeTagFile(cache_process_finish_tagfile, runjob_logfile, runjob_errfile)
+
+        # Regenerate toRunDict
         toRunDict = {}
         if os.path.exists(forceruntagfile):
             for i in range(len(seqIDList)):
@@ -590,7 +651,7 @@ def SubmitJob(jobid,cntSubmitJobDict, numseq_this_user):#{{{
                     query_para['name_software'] = "prodres"
                     para_str = json.dumps(query_para, sort_keys=True)
                     jobname = ""
-                    if not email in vip_user_list:
+                    if not email in g_params['vip_user_list']:
                         useemail = ""
                     else:
                         useemail = email
@@ -1089,8 +1150,7 @@ def main(g_params):#{{{
 
         webcom.loginfo("loop %d"%(loop), gen_logfile)
 
-        CreateRunJoblog(path_result, submitjoblogfile, runjoblogfile,
-                finishedjoblogfile, loop)
+        qdcom.CreateRunJoblog(loop, isOldRstdirDeleted, g_params)
 
         # Get number of jobs submitted to the remote server based on the
         # runjoblogfile
@@ -1166,8 +1226,8 @@ def main(g_params):#{{{
                         if webcom.IsHaveAvailNode(cntSubmitJobDict):
                             if not g_params['DEBUG_NO_SUBMIT']:
                                 SubmitJob(jobid, cntSubmitJobDict, numseq_this_user)
-                        GetResult(jobid) # the start tagfile is written when got the first result
-                        CheckIfJobFinished(jobid, numseq, email)
+                        qdcom.GetResult(jobid, g_params) # the start tagfile is written when got the first result
+                        qdcom.CheckIfJobFinished(jobid, numseq, email, g_params)
 
                 lines = hdl.readlines()
             hdl.close()
@@ -1175,7 +1235,6 @@ def main(g_params):#{{{
         webcom.loginfo("sleep for %d seconds"%(g_params['SLEEP_INTERVAL']), gen_logfile)
         time.sleep(g_params['SLEEP_INTERVAL'])
         loop += 1
-
 
     return 0
 #}}}
@@ -1197,6 +1256,17 @@ def InitGlobalParameter():#{{{
     g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
     g_params['UPPER_WAIT_TIME_IN_SEC'] = 60 #maximum wait time in local queue
     g_params['STATUS_UPDATE_FREQUENCY'] = [500, 50]  # updated by if loop%$1 == $2
+    g_params['name_server'] = "SubCons"
+    g_params['path_static'] = path_static
+    g_params['path_result'] = path_result
+    g_params['path_log'] = path_log
+    g_params['path_cache'] = path_cache
+    g_params['vip_email_file'] = vip_email_file
+    g_params['gen_logfile'] = gen_logfile
+    g_params['finished_date_db'] = finished_date_db
+    g_params['gen_errfile'] = gen_errfile
+    g_params['contact_email'] = contact_email
+    g_params['TZ'] = TZ
     return g_params
 #}}}
 if __name__ == '__main__' :
