@@ -1259,7 +1259,7 @@ def InitGlobalParameter():#{{{
     g_params['FORMAT_DATETIME'] = webcom.FORMAT_DATETIME
     g_params['UPPER_WAIT_TIME_IN_SEC'] = 60 #maximum wait time in local queue
     g_params['STATUS_UPDATE_FREQUENCY'] = [500, 50]  # updated by if loop%$1 == $2
-    g_params['name_server'] = "SubCons"
+    g_params['name_server'] = "PRODRES"
     g_params['path_static'] = path_static
     g_params['path_result'] = path_result
     g_params['path_log'] = path_log
