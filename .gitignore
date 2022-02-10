@@ -1,5 +1,6 @@
 # Compiled source
 *.pyc
+.*.swp
 
 # SQLite 
 *.sqlite3
@@ -19,9 +20,9 @@ bak.env/
 
 *.bak
 
-proj/pred/config/computenode.txt
-proj/pred/config/vip_email.txt
-proj/pred/config/config.json
+proj/pred/config/*.txt
+proj/pred/config/*.json
+proj/allowed*txt
 
 proj/settings.py
 
