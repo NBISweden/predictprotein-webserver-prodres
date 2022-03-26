@@ -25,4 +25,4 @@ proj/pred/config/*.json
 proj/allowed*txt
 
 proj/settings.py
-
+proj/allowed*txt
