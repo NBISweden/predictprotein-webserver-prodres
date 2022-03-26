@@ -107,8 +107,10 @@ document.getElementById('options').style.display = 'none';
      </tr>
      <tr><td> <h3>Reference</h3> </td></tr>
          {% include "pred/refbib.html" %}
-     <tr><td> <h3>Resource provider</h3> </td></tr> 
-       {% include "pred/egi_acknowledgement.html" %}
+     <tr><td>
+         <h3>Resource provider</h3>
+         {% include "pred/egi_acknowledgement.html" %}
+     </td></tr>
  </table>
 
 {% endblock %}
