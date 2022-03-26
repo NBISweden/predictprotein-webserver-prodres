@@ -1,24 +1,23 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-# Description: daemon to submit jobs and retrieve results to/from remote
-#              servers
-# 
+"""
+Description:
+    Daemon to submit jobs and retrieve results to/from remote servers
+    run periodically
+    At the end of each run generate a runlog file with the status of all jobs
+"""
 import os
 import sys
-import site
+
 from datetime import datetime
 from dateutil import parser as dtparser
 from pytz import timezone
 
 rundir = os.path.dirname(os.path.realpath(__file__))
-webserver_root = os.path.realpath("%s/../../../"%(rundir))
+webserver_root = os.path.realpath(f"{rundir}/../../../")
 
-activate_env="%s/env/bin/activate_this.py"%(webserver_root)
+activate_env = f"{webserver_root}/env/bin/activate_this.py"
 exec(compile(open(activate_env, "rb").read(), activate_env, 'exec'), dict(__file__=activate_env))
-#Add the site-packages of the virtualenv
-site.addsitedir("%s/env/lib/python2.7/site-packages/"%(webserver_root))
-sys.path.append("%s/env/lib/python2.7/site-packages/"%(webserver_root))
-sys.path.append("/usr/local/lib/python2.7/dist-packages")
 
 from libpredweb import myfunc
 from libpredweb import dataprocess
@@ -59,24 +58,6 @@ contact_email = "nanjiang.shu@scilifelab.se"
 
 threshold_logfilesize = 20*1024*1024
 
-usage_short="""
-Usage: %s
-"""%(sys.argv[0])
-
-usage_ext="""
-Description:
-    Daemon to submit jobs and retrieve results to/from remote servers
-    run periodically
-    At the end of each run generate a runlog file with the status of all jobs
-
-OPTIONS:
-  -h, --help    Print this help message and exit
-
-Created 2015-03-25, updated 2018-10-11, Nanjiang Shu
-"""
-usage_exp="""
-"""
-
 basedir = os.path.realpath("%s/.."%(rundir)) # path of the application, i.e. pred/
 path_static = "%s/static"%(basedir)
 path_log = "%s/static/log"%(basedir)
@@ -91,12 +72,8 @@ black_iplist_file = "%s/config/black_iplist.txt"%(basedir)
 finished_date_db = "%s/cached_job_finished_date.sqlite3"%(path_log)
 vip_email_file = "%s/config/vip_email.txt"%(basedir)
 
-def PrintHelp(fpout=sys.stdout):#{{{
-    print(usage_short, file=fpout)
-    print(usage_ext, file=fpout)
-    print(usage_exp, file=fpout)#}}}
 
-def main(g_params):#{{{
+def main(g_params):  # {{{
     if os.path.exists(black_iplist_file):
         g_params['blackiplist'] = myfunc.ReadIDList(black_iplist_file)
     submitjoblogfile = "%s/submitted_seq.log"%(path_log)
@@ -109,7 +86,7 @@ def main(g_params):#{{{
     loop = 0
     while 1:
         # load the config file if exists
-        if os.path.exists("%s/CACHE_CLEANING_IN_PROGRESS"%(path_result)):#pause when cache cleaning is in progress
+        if os.path.exists("%s/CACHE_CLEANING_IN_PROGRESS"%(path_result)):  #pause when cache cleaning is in progress
             continue
 
         configfile = "%s/config/config.json"%(basedir)
@@ -131,7 +108,7 @@ def main(g_params):#{{{
 
         isOldRstdirDeleted = False
         if loop % g_params['STATUS_UPDATE_FREQUENCY'][0] == g_params['STATUS_UPDATE_FREQUENCY'][1]:
-            qdcom.RunStatistics_basic(webserver_root, gen_logfile, gen_errfile)
+            qdcom.RunStatistics(g_params)
             isOldRstdirDeleted = webcom.DeleteOldResult(path_result, path_log,
                     gen_logfile, MAX_KEEP_DAYS=g_params['MAX_KEEP_DAYS'])
             webcom.CleanServerFile(path_static, gen_logfile, gen_errfile)
@@ -219,9 +196,10 @@ def main(g_params):#{{{
         loop += 1
 
     return 0
-#}}}
+# }}}
 
-def InitGlobalParameter():#{{{
+
+def InitGlobalParameter():  # {{{
     g_params = {}
     g_params['isQuiet'] = True
     g_params['blackiplist'] = []
@@ -248,10 +226,13 @@ def InitGlobalParameter():#{{{
     g_params['finished_date_db'] = finished_date_db
     g_params['gen_errfile'] = gen_errfile
     g_params['contact_email'] = contact_email
+    g_params['webserver_root'] = webserver_root
     g_params['TZ'] = TZ
     return g_params
-#}}}
-if __name__ == '__main__' :
+# }}}
+
+
+if __name__ == '__main__':
     g_params = InitGlobalParameter()
     date_str = time.strftime(g_params['FORMAT_DATETIME'])
     print("\n#%s#\n[Date: %s] qd_fe.py restarted"%('='*80,date_str))
